@@ -1,0 +1,31 @@
+{
+    "name": "nwidart/posmanager",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\PosManager\\": "",
+            "Modules\\PosManager\\App\\": "app/",
+            "Modules\\PosManager\\Database\\Factories\\": "database/factories/",
+            "Modules\\PosManager\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\PosManager\\Tests\\": "tests/"
+        }
+    }
+}

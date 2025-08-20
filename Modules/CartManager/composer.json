@@ -1,0 +1,31 @@
+{
+    "name": "nwidart/cartmanager",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\CartManager\\": "",
+            "Modules\\CartManager\\App\\": "app/",
+            "Modules\\CartManager\\Database\\Factories\\": "database/factories/",
+            "Modules\\CartManager\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\CartManager\\Tests\\": "tests/"
+        }
+    }
+}

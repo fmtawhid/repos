@@ -1,0 +1,11 @@
+{
+    "name": "KitchenManager",
+    "alias": "kitchenmanager",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\KitchenManager\\App\\Providers\\KitchenManagerServiceProvider"
+    ],
+    "files": []
+}

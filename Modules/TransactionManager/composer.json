@@ -1,0 +1,31 @@
+{
+    "name": "nwidart/transactionmanager",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\TransactionManager\\": "",
+            "Modules\\TransactionManager\\App\\": "app/",
+            "Modules\\TransactionManager\\Database\\Factories\\": "database/factories/",
+            "Modules\\TransactionManager\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\TransactionManager\\Tests\\": "tests/"
+        }
+    }
+}

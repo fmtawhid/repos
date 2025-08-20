@@ -1,0 +1,173 @@
+.footable-filtering {
+	display: none;
+}
+
+.tt-generate-img-wrap .tt-overly-icon .overly-btn {
+	line-height: 32px;
+}
+
+
+.btn--increment,
+.btn--decrement {
+	left: calc(100% + 4px);
+	top: -1.15rem;
+}
+
+.btn--increment:active span.text-primary,
+.btn--increment:focus span.text-primary {
+	color: #fff !important;
+}
+
+.btn--increment:hover span.text-primary,
+.btn--decrement:hover span.text-danger {
+	color: #fff !important;
+}
+
+
+
+.tt-slider-indicator .swiper-button-next,
+.tt-slider-indicator .swiper-button-prev {
+	width: 1.875rem;
+	height: 1.875rem;
+	line-height: 1.875rem;
+	background: #fff;
+	border-radius: 50%;
+	top: 55%
+}
+
+.tt-slider-indicator .swiper-button-next::after,
+.tt-slider-indicator .swiper-button-prev::after {
+	font-size: 10px;
+	color: #006239;
+	font-weight: 700
+}
+
+.tt-slider-indicator .swiper-button-next {
+	left: auto;
+	right: 4px
+}
+
+.tt-slider-indicator .swiper-button-prev {
+	right: auto;
+	left: 4px
+}
+
+.tt-avatar-info img {
+	-o-object-fit: cover !important;
+	object-fit: cover !important;
+	aspect-ratio: 1 / 1;
+}
+
+.offcanvas-body {
+	padding-bottom: 78px;
+}
+
+.offcanvas-footer {
+	padding: 1rem 1.5rem;
+	background: #fff;
+	position: fixed;
+	bottom: 0;
+	width: 100%;
+}
+
+.tt-template-category-slider .swiper-slide-active {
+	color: #004df0;
+}
+
+body.swal2-height-auto.swal2-shown {
+	height: 100% !important;
+}
+
+table tbody tr td {
+	font-size: 13px;
+}
+
+.bttn--icon {
+	width: 22px !important;
+	height: 22px !important;
+}
+
+.bttn--icon .fs-18 {
+	font-size: 18px !important;
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+	}
+
+	to {
+		opacity: 1;
+	}
+}
+
+.fade-in {
+	animation: fadeIn .50s forwards;
+}
+
+.msg-wrapper {
+	transition: all 0.3s ease-in-out;
+}
+
+.msg-wrapper:hover .txt-copy-btn {
+	display: inline-block !important;
+}
+.highlight {
+    color: #246aff; 
+    font-weight: bold; 
+}
+
+
+.tt-lock-button .show {
+    display: block !important;
+}
+.tt-lock-button .hide {
+    display: none !important;
+}
+
+.tt-pos-right .tt-pos-added-item{
+	min-height: calc(100vh - 520px);
+}
+.tt-modal-close-icon{
+	top: 8px;
+    right: 8px;
+    z-index: 9;
+	font-size: 10px;
+	color: rgb(255 0 0 / 54%);
+}
+/* video responsive */
+
+video {
+    width: 100%; /* The video takes up the full width of the parent container */
+    height: auto; /* Maintain aspect ratio */
+    display: block; /* Remove inline-block spacing (optional) */
+    max-width: 100%; /* Prevent the video from exceeding the parent container width */
+    border-radius: 8px; /* Optional: Add rounded corners */
+}
+
+/* Optional: Add styling for the container */
+.video-container {
+    max-width: 100%; /* Make sure the container scales as well */
+    overflow: hidden; /* Prevent content overflow */
+    position: relative; /* For additional layout adjustments */
+    border: 1px solid #ebebeb; /* Optional: Add a border around the video */
+    border-radius: 8px; /* Optional: Rounded corners for the container */
+}
+.note-editable{
+	height: 100% !important;
+}
+/* select2 height */
+.select2-container--default .select2-selection--single {
+    height: calc(2.1rem + 2px);
+}
+/* screen custom height */
+/* .content-generator__body .content-generator__body-content.tt-screen-custom-height .note-editor{
+	height: auto !important;
+} */
+
+.tt-chat-history-list li{
+	border-left: 2px solid transparent;
+}
+.tt-chat-history-list li.active{
+	background-color: #f5f8ff;
+}

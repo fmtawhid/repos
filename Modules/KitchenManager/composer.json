@@ -1,0 +1,31 @@
+{
+    "name": "nwidart/kitchenmanager",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\KitchenManager\\": "",
+            "Modules\\KitchenManager\\App\\": "app/",
+            "Modules\\KitchenManager\\Database\\Factories\\": "database/factories/",
+            "Modules\\KitchenManager\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\KitchenManager\\Tests\\": "tests/"
+        }
+    }
+}

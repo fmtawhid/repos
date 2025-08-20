@@ -1,0 +1,10 @@
+{
+    "BranchModule": true,
+    "CartManager": true,
+    "POSManager": true,
+    "PosManager": true,
+    "KitchenManager": true,
+    "ReservationManager": true,
+    "TransactionModule": true,
+    "TransactionManager": true
+}

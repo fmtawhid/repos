@@ -1,0 +1,30 @@
+@extends('layouts.login')
+@section('title')
+    {{ localize('Verify') }} {{ getSetting('tab_separator') }} {{ getSetting('system_title') }}
+@endsection
+@section('content')
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">{{ localize('Verify Your Email Address') }}</div>
+
+                <div class="card-body">
+                    @if (session('resent'))
+                        <div class="alert alert-success" role="alert">
+                            {{ localize('A fresh verification link has been sent to your email address.') }}
+                        </div>
+                    @endif
+
+                    {{ localize('Before proceeding, please check your email for a verification link.') }}
+                    {{ localize('If you did not receive the email') }},
+                    <form class="d-inline" method="POST" action="{{ route('verification.resend') }}">
+                        @csrf
+                        <button type="submit" class="btn btn-link p-0 m-0 align-baseline">{{ localize('click here to request another') }}</button>.
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection

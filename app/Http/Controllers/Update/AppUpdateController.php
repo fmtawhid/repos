@@ -1,0 +1,52 @@
+<?php
+
+namespace App\Http\Controllers\Update;
+
+use App\Http\Controllers\Controller;
+use App\Services\AppUpdate\AppUpdateService;
+use Illuminate\Http\Request;
+
+class AppUpdateController extends Controller
+{
+    protected $updateService;
+
+    // Inject the UpdateService into the controller
+    public function __construct()
+    {
+        $this->updateService = new AppUpdateService();
+    }
+
+    // Show the upload form
+    public function index()
+    {
+        return view('update.index');
+    }
+
+    // Handle the uploaded zip file
+    public function upload(Request $request)
+    {
+        try{
+            // Validate uploaded file (it should be a zip file)
+            $request->validate([
+                'update_zip' => 'required|mimes:zip|max:10240', // Max size of 10MB
+            ]);
+
+            // Get the uploaded file
+            $file = $request->file('update_zip');
+
+            // Call the update service to upload and replace the files
+            $updateStatus = $this->updateService->processUpdate($file);
+
+            // Return success or error based on the outcome
+            if ($updateStatus) {
+                return redirect()->route('update.index')->with('success', 'Update applied successfully!');
+            } else {
+                return redirect()->route('update.index')->with('error', 'Failed to apply the update.');
+            }
+        }
+        catch(\Throwable $e){
+            return back()->with('error', $e->getMessage());
+        }
+
+    }
+}

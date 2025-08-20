@@ -1,0 +1,208 @@
+<?php
+
+namespace App\Traits\File;
+
+use Svg\Tag\Image;
+use Illuminate\Support\Facades\Log;
+use Intervention\Image\ImageManager;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Drivers\Gd\Driver;
+
+trait FileUploadTrait
+{
+    public function uploadFile(
+        $file,
+        $folderPath,
+        $isImage = true,
+        $isResizeRequired = false,
+        $width = null,
+        $height = null,
+        $disk = null,
+        $convertJpg = false
+    ) {
+
+        # Disk Assign
+        $disk = empty($disk) ? setDefaultDisk() : $disk;
+
+        // Folder Path Defining
+        $dynamicPath = public_path($folderPath);
+
+        // Dynamic Directory creating with Permissions
+        if (!file_exists($dynamicPath)) {
+            if (!mkdir($dynamicPath, 0777, TRUE) && !is_dir($dynamicPath)) {
+                throw new \RuntimeException(sprintf('Directory "%s" was not created', $dynamicPath));
+            }
+        }
+
+        // Selected File Extension
+        $extension = $file->getClientOriginalExtension();
+
+        info("Extension is : {$extension}");
+
+        $isSvg = isSvg($extension);
+
+        if($convertJpg){
+            $extensionName = $isSvg ? ".svg" : ".jpg";
+        }else{
+            $extensionName = ".$extension";
+        }
+
+        // File Name generate
+        $fileName  = fileRename() . $extensionName;
+
+        // File Path generate Ex. uploads/categories/xyz123.webp
+        $filePath = "{$folderPath}/{$fileName}";
+
+        // When image extension is allowed
+        if ($isImage && !$isSvg && in_array($extension, allowedImageExtensions())) {
+            $manager = new ImageManager(new Driver());
+
+            $img = $manager->read($file);
+
+            if ($isResizeRequired) {
+                $img = $img->resize($width, $height)->toJpeg();
+            } else {
+                $img = $img->toJpeg();
+            }
+
+            $img->save($dynamicPath . '/' . $fileName);
+        } else {
+            $file->move($dynamicPath, $fileName);
+        }
+
+        return $filePath;
+    }
+    public function fileProcess(
+        $file,
+        $folderPath,
+        $resizeRequired = true,
+        $height = 800,
+        $width  = 800,
+        $fileOriginalName = false
+    ) {
+        // Folder Path Defining
+        $dynamicPath = public_path($folderPath);
+
+        // Dynamic Directory creating with Permissions
+        if (!file_exists($dynamicPath)) {
+            if (!mkdir($dynamicPath, 0777, TRUE) && !is_dir($dynamicPath)) {
+                throw new \RuntimeException(sprintf('Directory "%s" was not created', $dynamicPath));
+            }
+        }
+
+        // Selected File Extension
+        $extension = $file->getClientOriginalExtension();
+
+
+        // File Name generate
+        $fileName  = $fileOriginalName ? $file->getClientOriginalName() : slugMaker($file->getClientOriginalName()). ".$extension";
+
+        // File Path generate Ex. uploads/categories/xyz123.webp
+        $filePath = "{$folderPath}/{$fileName}";
+
+        Log::info("File Saving : " . $filePath);
+
+        $file->move($dynamicPath, $fileName);
+
+        return $filePath;
+    }
+
+    public function bucketFileUpload($url, $bucketType = "s3")
+    {
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($curl, CURLOPT_URL, $url);
+        $contents = curl_exec($curl);
+        curl_close($curl);
+        Storage::disk('s3')->put('images/' . $name, $contents, 'public');
+        $file_path = Storage::disk('s3')->url('images/' . $name);
+    }
+
+    public function  saveFileFromUrl($file, $uploadDir, $disk = null, $isBase64 = false)
+    {
+        info("File URL : {$file}");
+        $disk       = empty($disk) ? setDefaultDisk() : $disk;
+
+        $fileRename = randomStringNumberGenerator(10,true,true).".png";
+
+        createDynamicDir($uploadDir);
+
+        $filePath = public_path($uploadDir."/{$fileRename}");
+
+        info("SD --- File Path: {$filePath}");
+
+        $image    = $isBase64 ? file_put_contents($filePath, base64_decode($file)) : file_put_contents($filePath, file_get_contents($file));
+
+        info("Uploaded Image Path: {$filePath}");
+
+        return "{$uploadDir}/{$fileRename}";
+    }
+
+    public function saveBase64EncodedFile($encodedFile, $uploadDir)
+    {
+        //TODO::Will introduce Dynamic Disk Later.
+        file_put_contents($uploadDir, $encodedFile);
+
+        return $uploadDir;
+    }
+
+    public function getBase64EncodedFile($imageFile)
+    {
+        $imageContent = file_get_contents($imageFile);
+        return base64_encode($imageContent);
+    }
+
+    public function getFileRealPath($imageFile)
+    {
+        return $imageFile->getRealPath();
+    }
+
+
+
+    public function saveBase64StringToDirectory($base64Image, $uploadDir, $fileName = null)
+    {
+        // Directory creating if not exists.
+        createDynamicDir(public_path($uploadDir));
+
+        // Decode the base64 string
+        $imageData = base64_decode($base64Image);
+
+        // Set the file name and path
+        $fileName = $fileName ?? 'image_' . time() . '.png';
+
+        $uploadingDirName = "{$uploadDir}/{$fileName}";
+
+        $filePath = public_path($uploadingDirName);
+
+        // Save the decoded image data to the file
+        file_put_contents($filePath, $imageData);
+
+        // Save the image data to the file
+        if (file_put_contents($filePath, $imageData)) {
+            return $uploadingDirName;  // Return relative file path
+        }
+
+        throw new \Exception('Failed to save the image',appStatic()::INTERNAL_ERROR);
+    }
+
+    public function savePngToDirectory($pngFile, $uploadDir, $fileName = null)
+    {
+        // Directory creating if not exists.
+        createDynamicDir(public_path($uploadDir));
+
+        // Set the file name and path
+        $fileName = $fileName ?? 'image_' . time() . '.png';
+
+        $uploadingDirName = "{$uploadDir}/{$fileName}";
+
+        $filePath = public_path($uploadingDirName);
+
+        // Save the image data to the file
+        if (file_put_contents($filePath, $pngFile)) {
+            return $uploadingDirName;  // Return relative file path
+        }
+
+        throw new \Exception('Failed to save the image',appStatic()::INTERNAL_ERROR);
+    }
+
+}

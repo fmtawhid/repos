@@ -1,0 +1,206 @@
+<?php
+
+namespace App\Services\AppUpdate;
+
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
+use ZipArchive;
+/**
+ * Class AppUpdateService.
+ */
+class AppUpdateService
+{
+
+    private $backupPath;
+
+    public function __construct()
+    {
+        $this->backupPath = base_path('storage/app/backups');
+    }
+
+    /**
+     * Process the uploaded update zip file.
+     *
+     * @param string $zipFilePath
+     * @return bool
+     */
+    public function processUpdate($zipFilePath)
+    {
+        $extractPath = base_path('storage/app/public/my_temp_update');
+
+        try {
+            // Extract the zip file
+            if (!$this->extractZip($zipFilePath, $extractPath)) {
+                throw new \Exception("Failed to extract the zip file.");
+            }
+
+            // Replace files from the extracted folder
+            if (!$this->replaceFilesFromExtractedFolder($extractPath)) {
+                throw new \Exception("Failed to replace files.");
+            }
+
+            // Clean up the extracted folder
+            $this->cleanUpExtractedFolder($extractPath);
+
+            return true;
+        } catch (\Exception $e) {
+            // Log the error or handle as needed
+            return false;
+        }
+    }
+
+    /**
+     * Extract the zip file to a specified directory.
+     *
+     * @param string $zipFilePath
+     * @param string $extractPath
+     * @return bool
+     */
+    private function extractZip($zipFilePath, $extractPath)
+    {
+        $zip = new \ZipArchive();
+        if ($zip->open($zipFilePath) === true) {
+            // Ensure the extract path exists
+            $this->ensureDirectoryExists($extractPath);
+            $zip->extractTo($extractPath);
+            $zip->close();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Replace files from the extracted folder.
+     *
+     * @param string $extractPath
+     * @return bool
+     */
+    private function replaceFilesFromExtractedFolder($extractPath): bool
+    {
+        // Track updated files to roll back in case of an error
+        $updatedFiles = [];
+        $errors = [];
+
+        // Get all files in the extracted folder
+        $files = $this->getAllFiles($extractPath);
+
+        foreach ($files as $file) {
+            // Construct the target path by replacing the extract path portion
+            $relativePath = str_replace($extractPath . DIRECTORY_SEPARATOR, '', $file);
+            $targetPath = base_path($relativePath);
+
+            try {
+                // Backup the original file before replacing
+                if (file_exists($targetPath)) {
+                    $backupFilePath = $this->backupPath . '/' . $relativePath;
+
+                    // Ensure the backup directory exists
+                    $this->ensureDirectoryExists(dirname($backupFilePath));
+
+                    copy($targetPath, $backupFilePath);
+                    $updatedFiles[] = $backupFilePath;
+                }
+
+                // Replace the file
+                $this->ensureDirectoryExists(dirname($targetPath)); // Ensure the target directory exists
+                copy($file, $targetPath);
+            } catch (\Exception $e) {
+                // Track the files that caused errors
+                $errors[] = $file;
+
+                break; // Stop and revert all if there's any error
+            }
+        }
+
+        // If there were errors, revert the files
+        if (!empty($errors)) {
+            $this->revertFiles($updatedFiles);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Revert updated files in case of an error.
+     *
+     * @param array $updatedFiles
+     * @return void
+     */
+    private function revertFiles(array $updatedFiles): void
+    {
+        foreach ($updatedFiles as $backupFilePath) {
+            $originalFilePath = str_replace($this->backupPath . '/', '', $backupFilePath);
+            $originalFilePath = base_path($originalFilePath);
+
+            if (file_exists($backupFilePath)) {
+                $this->ensureDirectoryExists(dirname($originalFilePath));
+                copy($backupFilePath, $originalFilePath);
+            }
+        }
+    }
+
+    /**
+     * Ensure a directory exists; create it if it doesn't.
+     *
+     * @param string $directoryPath
+     * @return void
+     */
+    private function ensureDirectoryExists($directoryPath): void
+    {
+        if (is_dir($directoryPath)) {
+            return; // Directory already exists, skip creation
+        }
+
+        if (!mkdir($directoryPath, 0755, true) && !is_dir($directoryPath)) {
+            throw new \Exception(sprintf('Directory "%s" was not created', $directoryPath),500);
+        }
+    }
+
+    /**
+     * Clean up the extracted folder.
+     *
+     * @param string $extractPath
+     * @return void
+     */
+    private function cleanUpExtractedFolder($extractPath): void
+    {
+        if (is_dir($extractPath)) {
+            $this->deleteDirectory($extractPath);
+        }
+    }
+
+    /**
+     * Delete a directory and its contents.
+     *
+     * @param string $directoryPath
+     * @return void
+     */
+    private function deleteDirectory($directoryPath): void
+    {
+        $files = array_diff(scandir($directoryPath), ['.', '..']);
+        foreach ($files as $file) {
+            $path = $directoryPath . DIRECTORY_SEPARATOR . $file;
+            is_dir($path) ? $this->deleteDirectory($path) : unlink($path);
+        }
+        rmdir($directoryPath);
+    }
+
+    /**
+     * Get all files recursively from a directory.
+     *
+     * @param string $directoryPath
+     * @return array
+     */
+    private function getAllFiles($directoryPath): array
+    {
+        $files = [];
+        $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($directoryPath));
+        foreach ($iterator as $file) {
+            if ($file->isFile()) {
+                $files[] = $file->getPathname();
+            }
+        }
+        return $files;
+    }
+}

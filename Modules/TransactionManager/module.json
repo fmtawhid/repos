@@ -1,0 +1,11 @@
+{
+    "name": "TransactionManager",
+    "alias": "transactionmanager",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\TransactionManager\\App\\Providers\\TransactionManagerServiceProvider"
+    ],
+    "files": []
+}

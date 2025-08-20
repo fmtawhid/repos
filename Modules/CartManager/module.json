@@ -1,0 +1,11 @@
+{
+    "name": "CartManager",
+    "alias": "cartmanager",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\CartManager\\App\\Providers\\CartManagerServiceProvider"
+    ],
+    "files": []
+}

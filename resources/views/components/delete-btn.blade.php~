@@ -1,0 +1,19 @@
+@props([
+    "route",
+    "id",
+    "method" => "DELETE",
+])
+
+<button
+    type="submit"
+    data-id="{{ $id }}"
+    data-url="{{ $route }}"
+    data-method="{{ $method }}"
+    class="deleteBranch text-danger btn btn-sm ms-1">
+     <span data-bs-toggle="tooltip"
+           data-bs-placement="top"
+           title="{{ localize('Delete') }}">
+         <i data-feather="trash-2" class="icon-14"></i>
+         {{ $slot }}
+     </span>
+</button>
