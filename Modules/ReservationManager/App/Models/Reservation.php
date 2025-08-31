@@ -78,32 +78,86 @@ class Reservation extends Model
         return $this->belongsTo(Status::class, 'status_id');
     }
     
+    // public function scopeFilters($query)
+    // {
+    //     $query->when(request()->status_id, function ($query, $status_id) {
+    //         $query->where('status_id', $status_id);
+    //     });
+
+    //     $query->when(request()->start_date && request()->end_date, function ($query) {
+    //         $query
+    //         ->where('start_datetime', '>=', request()->start_date)
+    //         ->where('end_datetime', '<=', request()->end_date);
+    //     });
+
+    //     $query->when(request()->search, function ($query, $search) {
+    //         $query->where(function ($query) use ($search) {
+    //             $query->whereHas('customer', function ($query) use ($search) {
+    //                 $query->where('first_name', 'LIKE', "%{$search}%")
+    //                       ->orWhere('last_name', 'LIKE', "%{$search}%")
+    //                       ->orWhere('email', 'LIKE', "%{$search}%");
+    //             });
+    //             $query->orWhereHas('reservationTable', function ($query) use ($search) {
+    //                 $query->whereHas('table', function ($query) use ($search) {
+    //                     $query->where('table_code', 'LIKE', "%{$search}%");
+    //                 });
+    //             });
+    //         });
+    //     });
+
+    //     return $query;
+    // }
+    // Modules\ReservationManager\App\Models\Reservation.php
+    public function scopeForVendor($query, $vendorId = null)
+    {
+        // ভেন্ডার রোল আছে এমন ইউজারদের জন্য শুধুমাত্র নিজের ভেন্ডার আইডির রিজার্ভেশন দেখাবে
+        if (auth()->check()) {
+            return $query->where("vendor_id", auth()->user()->vendor_id ?? auth()->id());
+        }
+        
+        // নির্দিষ্ট ভেন্ডার আইডির জন্য ফিল্টার
+        if ($vendorId) {
+            return $query->where("vendor_id", $vendorId);
+        }
+        
+        return $query;
+    }
+
     public function scopeFilters($query)
     {
-        $query->when(request()->status_id, function ($query, $status_id) {
-            $query->where('status_id', $status_id);
-        });
+        $request = request();
 
-        $query->when(request()->start_date && request()->end_date, function ($query) {
-            $query
-            ->where('start_datetime', '>=', request()->start_date)
-            ->where('end_datetime', '<=', request()->end_date);
-        });
+        // ভেন্ডার ফিল্টার - শুধুমাত্র অ্যাডমিনদের জন্য
+        if ($request->has("vendor_id") && auth()->user()->hasRole('admin')) {
+            $query->where('vendor_id', $request->vendor_id);
+        }
 
-        $query->when(request()->search, function ($query, $search) {
-            $query->where(function ($query) use ($search) {
-                $query->whereHas('customer', function ($query) use ($search) {
-                    $query->where('first_name', 'LIKE', "%{$search}%")
-                          ->orWhere('last_name', 'LIKE', "%{$search}%")
-                          ->orWhere('email', 'LIKE', "%{$search}%");
+        // Status filter
+        if ($request->has("status_id")) {
+            $query->where('status_id', $request->status_id);
+        }
+
+        // Date range filter
+        if ($request->has("start_date") && $request->has("end_date")) {
+            $query->where('start_datetime', '>=', $request->start_date)
+                ->where('end_datetime', '<=', $request->end_date);
+        }
+
+        // Search filter
+        if ($request->has("search")) {
+            $query->where(function ($query) use ($request) {
+                $query->whereHas('customer', function ($query) use ($request) {
+                    $query->where('first_name', 'LIKE', "%{$request->search}%")
+                        ->orWhere('last_name', 'LIKE', "%{$request->search}%")
+                        ->orWhere('email', 'LIKE', "%{$request->search}%");
                 });
-                $query->orWhereHas('reservationTable', function ($query) use ($search) {
-                    $query->whereHas('table', function ($query) use ($search) {
-                        $query->where('table_code', 'LIKE', "%{$search}%");
+                $query->orWhereHas('reservationTable', function ($query) use ($request) {
+                    $query->whereHas('table', function ($query) use ($request) {
+                        $query->where('table_code', 'LIKE', "%{$request->search}%");
                     });
                 });
             });
-        });
+        }
 
         return $query;
     }

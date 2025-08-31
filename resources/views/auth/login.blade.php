@@ -88,10 +88,10 @@
                                     class="btn btn-primary mt-3 d-block w-100">{{ localize('Login') }}</button>
                             </div>
                         </div>
-                        <p class="mt-3 text-center">{{ localize('Don’t have an account?') }} <a
+                        <!-- <p class="mt-3 text-center">{{ localize('Don’t have an account?') }} <a
                                 href="{{ route('register') }}" class="fw-medium">{{ localize('Sign up for free!') }}</a>
 
-                        </p>
+                        </p> -->
 
                     </form>
                     <!--demo credentials-->

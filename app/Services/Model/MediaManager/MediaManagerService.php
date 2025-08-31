@@ -20,7 +20,7 @@ class MediaManagerService
         $userType = $request->user_type ? intval($request->user_type) : 0;
 
         $query = MediaManager::query();
-
+        
         if(!empty($search)) {
             $query = $query->search($search);
         }

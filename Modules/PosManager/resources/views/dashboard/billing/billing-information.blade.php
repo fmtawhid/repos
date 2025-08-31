@@ -1,5 +1,5 @@
 <div class="mt-auto pos-summary border-top pt-3">
-    <div class="tt-pos-calculation mb-3">
+    <div class="mb-3">
         <div class="tt-pos-cal">
             <p class="mb-0">{{ localize("Subtotal") }}</p>
             <strong class="posCartSubTotal">0</strong>

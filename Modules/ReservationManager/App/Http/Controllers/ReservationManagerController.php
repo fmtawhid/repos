@@ -34,14 +34,35 @@ class ReservationManagerController extends Controller
     /**
      * Display a listing of the resource.
      */
+    // public function index(Request $request)
+    // {
+    //     $data["reservations"]   = $this->service
+    //         ->getAll(true, true, ['status', 'branch', 'customer', 'reservationTable', 'vendor']);
+
+    //     $data["branches"]       = $this->branchService->getAll(null, true);
+
+    //     // dd($data);
+    //     if ($request->ajax()) {
+    //         return view('reservationmanager::list', $data)->render();
+    //     }
+
+    //     return view('reservationmanager::index')->with($data);
+    // }
     public function index(Request $request)
     {
-        $data["reservations"]   = $this->service
-            ->getAll(true, true, ['status', 'branch', 'customer', 'reservationTable', 'vendor']);
+        // ভেন্ডার কিনা চেক করুন
+        $isVendor = auth()->check() ;
+        
+        $data["reservations"] = $this->service
+            ->getAll(true, true, ['status', 'branch', 'customer', 'reservationTable', 'vendor'], $isVendor);
 
-        $data["branches"]       = $this->branchService->getAll(null, true);
+        $data["branches"] = $this->branchService->getAll(null, true);
 
-        // dd($data);
+        // অ্যাডমিনদের জন্য ভেন্ডার লিস্ট যোগ করুন
+        // if (auth()->user()->hasRole('admin')) {
+        //     $data["vendors"] = User::where('user_type', 'vendor')->pluck('first_name', 'id');
+        // }
+
         if ($request->ajax()) {
             return view('reservationmanager::list', $data)->render();
         }

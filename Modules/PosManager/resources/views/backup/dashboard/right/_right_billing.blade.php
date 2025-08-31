@@ -1,12 +1,12 @@
 <div class="mt-auto">
-    <div class="tt-pos-calculation mb-3">
+    <div class="mb-3">
         <div class="tt-pos-cal">
             <p class="mb-0">Subtotal</p>
             <strong>$1258.00</strong>
         </div>
         <div class="tt-pos-cal">
             <p class="mb-0">Tax</p>
-            <strong>$1258.00</strong>
+            <strong>$1258.00</strong> 
         </div>
         <div class="tt-pos-cal tt-pos-discount">
             <p class="mb-0">Discount</p>

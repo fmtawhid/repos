@@ -19,8 +19,6 @@ class SubscriptionActionService
 
     public function assignSubscriptionPlan($payloads)
     {
-
-
         return $this->subscriptionService->assignSubscriptionPlan($payloads);
     }
 

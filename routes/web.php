@@ -70,7 +70,6 @@ Route::group(['prefix' => 'backend'], function () {
     # change settings
     Route::post('/change-currency', [CurrencyController::class, 'changeCurrency'])->name('backend.changeCurrency');
     Route::post('/change-language', [LanguageController::class, 'changeLanguage'])->name('backend.changeLanguage');
-
 });
 
 # subscription packages

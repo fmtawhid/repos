@@ -10,13 +10,40 @@ class TicketService
 {
 
     use FileUploadTrait;
+    // public function getAll(
+    //     $isPaginateGetOrPluck = null,
+    //     $onlyActives = null,
+    //     $withRelationships = ["updatedBy", "createdBy"])
+    // {
+
+    //     $query = Ticket::query()->filters()->orderBy('id', 'DESC');
+
+    //     // Bind Relationships
+    //     (!empty($withRelationships) ? $query->with($withRelationships) : false);
+
+    //     if(!is_null($onlyActives)){
+    //         $query->isActive($onlyActives);
+    //     }
+
+    //     if (is_null($isPaginateGetOrPluck)) {
+    //         return $query->pluck("name", "id");
+    //     }
+
+    //     return $isPaginateGetOrPluck ? $query->paginate(maxPaginateNo()) : $query->get();
+    // }
+    // App\Services\Model\Support\TicketService.php
     public function getAll(
         $isPaginateGetOrPluck = null,
         $onlyActives = null,
-        $withRelationships = ["updatedBy", "createdBy"])
-    {
-
+        $withRelationships = ["updatedBy", "createdBy"],
+        $forVendor = false
+    ) {
         $query = Ticket::query()->filters()->orderBy('id', 'DESC');
+
+        // ভেন্ডারের জন্য শুধুমাত্র নিজের তৈরি টিকেট দেখাবে
+        if ($forVendor) {
+            $query->forVendor();
+        }
 
         // Bind Relationships
         (!empty($withRelationships) ? $query->with($withRelationships) : false);
@@ -31,6 +58,16 @@ class TicketService
 
         return $isPaginateGetOrPluck ? $query->paginate(maxPaginateNo()) : $query->get();
     }
+
+    public function index($forVendor = false): array
+    {
+        $data = [];
+        $data['tickets'] = $this->getAll(true, null, ["updatedBy", "createdBy"], $forVendor);
+        $data['categories'] = (new CategoryService())->getAll(true, true);
+        $data['priorities'] = (new PriorityService())->getAll(null, true);
+        return $data;
+    }
+    
     public function findTicketById($id, $withRelationships = [], $conditions = [])
     {
         $query = Ticket::query();
@@ -68,14 +105,14 @@ class TicketService
 
         return $ticket;
     }
-    public function index():array
-    {
-        $data = [];
-        $data['tickets'] = $this->getAll(true, null);
-        $data['categories'] = (new CategoryService())->getAll(true, true);
-        $data['priorities'] = (new PriorityService())->getAll(null, true);
-        return $data;
-    }
+    // public function index():array
+    // {
+    //     $data = [];
+    //     $data['tickets'] = $this->getAll(true, null);
+    //     $data['categories'] = (new CategoryService())->getAll(true, true);
+    //     $data['priorities'] = (new PriorityService())->getAll(null, true);
+    //     return $data;
+    // }
 
 }
 

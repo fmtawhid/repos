@@ -43,4 +43,10 @@ class OrderProduct extends Model
         return $this->belongsTo(Product::class, 'product_id');
     }
 
+    // Order এর সাথে relationship যোগ করুন
+    public function order()
+    {
+        return $this->belongsTo(Order::class, 'order_id');
+    }
+
 }

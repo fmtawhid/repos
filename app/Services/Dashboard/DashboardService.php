@@ -7,41 +7,51 @@ use App\Models\Order;
 use App\Models\OrderProduct;
 use Carbon\Carbon;
 use App\Models\SystemSetting;
+use Illuminate\Support\Facades\Auth;
+
 class DashboardService {
 
     // get data for dashboard
     public function index($request) :array
     {
+        $vendorId = Auth::id(); // লগিনকৃত vendor এর ID
+        
         $data                      = [];
         $data['timelineText']      = $this->timelineText($request->timeline);
-        $data['totalEarning']      = $this->totalEarnings();
-        $data['totalSalesData']    = $this->totalSalesChart($request->timeline);
-        $data['totalCatSalesData'] = $this->topFiveCategoryChart();
-        $data['totalOrdersData']   = $this->last30DaysOrderChart();
-        $data['thisMonthSaleData'] = $this->thisMonthSaleChart();
+        $data['totalEarning']      = $this->totalEarnings($vendorId);
+        $data['totalSalesData']    = $this->totalSalesChart($request->timeline, $vendorId);
+        $data['totalCatSalesData'] = $this->topFiveCategoryChart($vendorId);
+        $data['totalOrdersData']   = $this->last30DaysOrderChart($vendorId);
+        $data['thisMonthSaleData'] = $this->thisMonthSaleChart($vendorId);
 
-        $data['totalOrderCount']      = $this->orderCounts()['totalOrderCount'];
-        $data['pendingOrderCount']    = $this->orderCounts()['pendingOrderCount'];
-        $data['processingOrderCount'] = $this->orderCounts()['processingOrderCount'];
-        $data['completedOrderCount']  = $this->orderCounts()['completedOrderCount'];
+        $orderCounts = $this->orderCounts($vendorId);
+        $data['totalOrderCount']      = $orderCounts['totalOrderCount'];
+        $data['pendingOrderCount']    = $orderCounts['pendingOrderCount'];
+        $data['processingOrderCount'] = $orderCounts['processingOrderCount'];
+        $data['completedOrderCount']  = $orderCounts['completedOrderCount'];
 
         return $data;
     }
 
     # orderCount
-    public function orderCounts() { 
+    public function orderCounts($vendorId) { 
         return [
-            'totalOrderCount'      => Order::count(),
-            'pendingOrderCount'    => Order::where('status_id', appStatic()::STATUS_ID['PENDING'])->count(),
-            'processingOrderCount' => Order::where('status_id', appStatic()::STATUS_ID['HOLD'])->count(),
-            'completedOrderCount'  => Order::where('status_id', appStatic()::STATUS_ID['COMPLETED'])->count(),
+            'totalOrderCount'      => Order::where('vendor_id', $vendorId)->count(),
+            'pendingOrderCount'    => Order::where('vendor_id', $vendorId)
+                                        ->where('status_id', appStatic()::STATUS_ID['PENDING'])->count(),
+            'processingOrderCount' => Order::where('vendor_id', $vendorId)
+                                        ->where('status_id', appStatic()::STATUS_ID['HOLD'])->count(),
+            'completedOrderCount'  => Order::where('vendor_id', $vendorId)
+                                        ->where('status_id', appStatic()::STATUS_ID['COMPLETED'])->count(),
         ];
     }
 
     # totalEarnings
-    public function totalEarnings() { 
-        $orderProductIds = OrderProduct::where('status_id', '!=', appStatic()::STATUS_ID['CANCELLED'])->pluck('id');
-        return OrderProduct::whereIn('id', $orderProductIds)->sum('total_price');
+    public function totalEarnings($vendorId) { 
+        return OrderProduct::whereHas('order', function($query) use ($vendorId) {
+                    $query->where('vendor_id', $vendorId)
+                          ->where('status_id', '!=', appStatic()::STATUS_ID['CANCELLED']);
+                })->sum('total_price');
     }
 
     # timeline text
@@ -64,7 +74,7 @@ class DashboardService {
     }
      
     # total sales chart
-    public function totalSalesChart($time)
+    public function totalSalesChart($time, $vendorId)
     {
         $timeline = 7; // 7, 30 or 90 days 
 
@@ -72,14 +82,18 @@ class DashboardService {
             $timeline = (int) $time;
         }
 
-        $orderProductIds            = OrderProduct::where('status_id', '!=', appStatic()::STATUS_ID['CANCELLED'])->where('created_at', '>=', Carbon::now()->subDays($timeline))->pluck('id');
-        $orderProductQueries        = OrderProduct::whereIn('id', $orderProductIds)->oldest();
+        $orderProducts = OrderProduct::whereHas('order', function($query) use ($vendorId, $timeline) {
+                            $query->where('vendor_id', $vendorId)
+                                  ->where('status_id', '!=', appStatic()::STATUS_ID['CANCELLED'])
+                                  ->where('created_at', '>=', Carbon::now()->subDays($timeline));
+                        })->oldest()->get();
+
         $totalSalesTimelineInString = '';
         $totalSalesAmountInString   = '';
 
         for ($i = $timeline; $i >= 0; $i--) {
             $totalSalesAmount = 0;
-            foreach ($orderProductQueries->get() as $orderProduct) {
+            foreach ($orderProducts as $orderProduct) {
                 if (date('Y-m-d', strtotime($i . ' days ago')) == date('Y-m-d', strtotime($orderProduct->created_at))) {
                     $totalSalesAmount += $orderProduct->total_price;
                 }
@@ -93,18 +107,21 @@ class DashboardService {
             }
         }
 
-        $totalSalesData               = new SystemSetting; // to create temp instance.
+        $totalSalesData               = new SystemSetting;
         $totalSalesData->labels       = $totalSalesTimelineInString;
         $totalSalesData->amount       = $totalSalesAmountInString;
-        $totalSalesData->totalEarning = $orderProductQueries->sum('total_price');
+        $totalSalesData->totalEarning = $orderProducts->sum('total_price');
 
         return $totalSalesData;
     }
 
     # top 5 category chart
-    public function topFiveCategoryChart()
+    public function topFiveCategoryChart($vendorId)
     {
-        $categories              = ItemCategory::orderBy('total_sales_count', 'DESC')->take(5);
+        $categories = ItemCategory::where('vendor_id', $vendorId)
+                        ->orderBy('total_sales_count', 'DESC')
+                        ->take(5);
+        
         $totalCategorySalesCount = $categories->sum('total_sales_count');
         $catLabelsInString       = '';
         $catSeries               = [];
@@ -117,7 +134,7 @@ class DashboardService {
             array_push($catSeries, (float) $cat->total_sales_count);
         }
 
-        $totalCatSalesData                          = new SystemSetting; // to create temp instance.
+        $totalCatSalesData                          = new SystemSetting;
         $totalCatSalesData->totalCategorySalesCount = $totalCategorySalesCount;
         $totalCatSalesData->series                  = json_encode($catSeries);
         $totalCatSalesData->labels                  = $catLabelsInString;
@@ -126,17 +143,21 @@ class DashboardService {
     }
 
     # last 30 days order
-    public function last30DaysOrderChart()
+    public function last30DaysOrderChart($vendorId)
     {
-        $timelineOrder                    = 30; // 7, 30 or 90 days   
+        $timelineOrder                    = 30;
         $totalOrdersTimelineInString      = '';
         $totalOrdersAmountInString        = '';
-        $ordersQuery = Order::where('created_at', '>=', Carbon::now()->subDays($timelineOrder))->oldest();
+        
+        $orders = Order::where('vendor_id', $vendorId)
+                    ->where('created_at', '>=', Carbon::now()->subDays($timelineOrder))
+                    ->oldest()
+                    ->get();
 
         for ($j = $timelineOrder; $j >= 0; $j--) {
             $totalOrdersAmount = 0;
 
-            foreach ($ordersQuery->get() as $order) {
+            foreach ($orders as $order) {
                 if (date('Y-m-d', strtotime($j . ' days ago')) == date('Y-m-d', strtotime($order->created_at))) {
                     $totalOrdersAmount += 1;
                 }
@@ -151,20 +172,25 @@ class DashboardService {
             }
         }
 
-        $totalOrdersData              = new SystemSetting;             // to create temp instance.
+        $totalOrdersData              = new SystemSetting;
         $totalOrdersData->labels      = $totalOrdersTimelineInString;
         $totalOrdersData->amount      = $totalOrdersAmountInString;
-        $totalOrdersData->totalOrders = $ordersQuery->count();
+        $totalOrdersData->totalOrders = $orders->count();
 
         return $totalOrdersData;
     }
 
     # this month sale's chart
-    private function thisMonthSaleChart()
+    private function thisMonthSaleChart($vendorId)
     {
-        $monthStart                = Carbon::now()->startOfMonth();
-        $orderProductIds           = OrderProduct::where('status_id', '!=', appStatic()::STATUS_ID['CANCELLED'])->where('created_at', '>=', $monthStart)->pluck('id');
-        $orderThisMonthQuery       = Order::whereIn('id', $orderProductIds)->oldest();
+        $monthStart = Carbon::now()->startOfMonth();
+        
+        $orderProducts = OrderProduct::whereHas('order', function($query) use ($vendorId, $monthStart) {
+                            $query->where('vendor_id', $vendorId)
+                                  ->where('status_id', '!=', appStatic()::STATUS_ID['CANCELLED'])
+                                  ->where('created_at', '>=', $monthStart);
+                        })->get();
+
         $thisMonthTimelineInString = '';
         $thisMonthAmountInString   = '';
 
@@ -175,11 +201,12 @@ class DashboardService {
             $dates[] = \Carbon\Carbon::createFromDate($today->year, $today->month, $i)->format('Y-m-d');
             $datesReadable[] = \Carbon\Carbon::createFromDate($today->year, $today->month, $i)->format('d M');
         }
+        
         foreach ($dates as $key => $date) {
             $totalOrdersAmount = 0;
-            foreach ($orderThisMonthQuery->get() as $orderGroup) {
-                if ($date == date('Y-m-d', strtotime($orderGroup->created_at))) {
-                    $totalOrdersAmount += $orderGroup->total;
+            foreach ($orderProducts as $orderProduct) {
+                if ($date == date('Y-m-d', strtotime($orderProduct->created_at))) {
+                    $totalOrdersAmount += $orderProduct->total_price;
                 }
             }
 
@@ -191,10 +218,12 @@ class DashboardService {
                 $thisMonthAmountInString .= json_encode($totalOrdersAmount) . ',';
             }
         }
-        $thisMonthSaleData         = new SystemSetting; // to create temp instance.
-        $thisMonthSaleData->labels =  $thisMonthTimelineInString;
+        
+        $thisMonthSaleData         = new SystemSetting;
+        $thisMonthSaleData->labels = $thisMonthTimelineInString;
         $thisMonthSaleData->amount = $thisMonthAmountInString;
-        $thisMonthSaleData->totalEarning = $orderThisMonthQuery->sum('total');
+        $thisMonthSaleData->totalEarning = $orderProducts->sum('total_price');
+        
         return $thisMonthSaleData;
     }
 }

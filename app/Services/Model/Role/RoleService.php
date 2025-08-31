@@ -103,7 +103,7 @@ class RoleService
         return Role::query()->with("permissions")->findOrFail($id);
     }
 
-
+    
     public function getPermissionByRoute(string $route)
     {
         if (isCacheExists($route)) {

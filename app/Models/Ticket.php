@@ -77,4 +77,23 @@ class Ticket extends Model
     {
         $query->where("slug", $slug);
     }
+
+    // New code for fix saas
+    public function scopeCreatedBy($query, $userId)
+    {
+        return $query->where("created_by_id", $userId);
+    }
+
+    public function scopeForVendor($query, $vendorId = null)
+    {
+        if (auth()->check()) {
+            return $query->createdBy(auth()->id());
+        }
+        
+        if ($vendorId) {
+            return $query->createdBy($vendorId);
+        }
+        
+        return $query;
+    }
 }

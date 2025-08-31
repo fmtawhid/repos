@@ -16,25 +16,84 @@ class ReservationService
     protected $model = Reservation::class;
     public $customerObject = null;
 
+    // Modules\ReservationManager\App\Services\Reservation\ReservationService.php
     public function getAll(
         $isPaginateGetOrPluck = null,
         $onlyActives = null,
-        $relations = []
+        $relations = [],
+        $forVendor = false
     )
     {
         $request = request();
         $query = $this->model::query()->filters();
 
+        // ভেন্ডারের জন্য শুধুমাত্র নিজের ভেন্ডার আইডির রিজার্ভেশন দেখাবে
+        if ($forVendor) {
+            $query->forVendor();
+        }
+
         if (is_null($isPaginateGetOrPluck)) {
             return $query->pluck("name", "id");
         }
+        
         if ($relations) {
             $query->with($relations);
         }
 
-
         return $isPaginateGetOrPluck ? $query->paginate(maxPaginateNo()) : $query->get();
     }
+
+    public function getReservationReports($forVendor = false)
+    {
+        $date_range = request()->date_range ?? null;
+        $query = Reservation::query()->filters();
+
+        // ভেন্ডারের জন্য শুধুমাত্র নিজের ভেন্ডার আইডির রিজার্ভেশন দেখাবে
+        if ($forVendor) {
+            $query->forVendor();
+        }
+
+        if ($date_range) {
+            $dates = explode(' to ', $date_range);
+            
+            $query->whereBetween('start_datetime', [
+                Carbon::createFromFormat('m/d/Y', $dates[0])->startOfDay(),
+                Carbon::createFromFormat('m/d/Y', $dates[1])->endOfDay(),
+            ]);
+        }
+
+        $branch_id = request()->branch_id ?? null;
+        $status_id = request()->status_id ?? null;
+        
+        if($branch_id){
+            $query->where('branch_id', $branch_id);
+        }
+
+        if($status_id){
+            $query->where('status_id', $status_id);
+        }
+
+        return $query->paginate(maxPaginateNo() ?? 10);
+    }
+    // public function getAll(
+    //     $isPaginateGetOrPluck = null,
+    //     $onlyActives = null,
+    //     $relations = []
+    // )
+    // {
+    //     $request = request();
+    //     $query = $this->model::query()->filters();
+
+    //     if (is_null($isPaginateGetOrPluck)) {
+    //         return $query->pluck("name", "id");
+    //     }
+    //     if ($relations) {
+    //         $query->with($relations);
+    //     }
+
+
+    //     return $isPaginateGetOrPluck ? $query->paginate(maxPaginateNo()) : $query->get();
+    // }
 
     public function storeReservation($payloads)
     {
@@ -161,31 +220,31 @@ class ReservationService
         ];
     }
 
-    public function getReservationReports(){
-        $date_range = request()->date_range ?? null;
-        $query      = Reservation::query();
+    // public function getReservationReports(){
+    //     $date_range = request()->date_range ?? null;
+    //     $query      = Reservation::query();
 
-        if ($date_range) {
-            $dates = explode(' to ', $date_range);
+    //     if ($date_range) {
+    //         $dates = explode(' to ', $date_range);
             
-            $query->whereBetween('start_datetime', [
-                Carbon::createFromFormat('m/d/Y', $dates[0])->startOfDay(),
-                Carbon::createFromFormat('m/d/Y', $dates[1])->endOfDay(),
-            ]);
-        }
+    //         $query->whereBetween('start_datetime', [
+    //             Carbon::createFromFormat('m/d/Y', $dates[0])->startOfDay(),
+    //             Carbon::createFromFormat('m/d/Y', $dates[1])->endOfDay(),
+    //         ]);
+    //     }
 
-        $branch_id = request()->branch_id ?? null;
-        $status_id = request()->status_id ?? null;
-        if($branch_id){
-            $query->where('branch_id', $branch_id);
-        }
+    //     $branch_id = request()->branch_id ?? null;
+    //     $status_id = request()->status_id ?? null;
+    //     if($branch_id){
+    //         $query->where('branch_id', $branch_id);
+    //     }
 
-        if($status_id){
-            $query->where('status_id', $status_id);
-        }
+    //     if($status_id){
+    //         $query->where('status_id', $status_id);
+    //     }
 
-        return $query->paginate(maxPaginateNo() ?? 10);
-    }
+    //     return $query->paginate(maxPaginateNo() ?? 10);
+    // }
 
 
 }
