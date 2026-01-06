@@ -192,4 +192,71 @@ class SubscriptionService
             ->where('subscription_status', appStatic()::PLAN_STATUS_ACTIVE)
             ->first() ?? [];
     }
+
+    /**
+     * Assign a subscription plan to a user (used for starter/free plans at registration)
+     *
+     * @param object $payloads
+     * @return SubscriptionUser
+     */
+    public function assignSubscriptionPlan($payloads)
+    {
+        $subscription_plan_id = $payloads->subscription_plan_id;
+
+        $subscriptionUser = new SubscriptionUser();
+        $subscriptionUser->start_at             = date('Y-m-d');
+        $subscriptionUser->expire_at            = planEndDate($subscription_plan_id);
+        $subscriptionUser->subscription_plan_id = $subscription_plan_id;
+        $subscriptionUser->subscription_status  = appStatic()::PLAN_STATUS_ACTIVE;
+        $subscriptionUser->payment_status       = appStatic()::PAYMENT_STATUS_PAID;
+        $subscriptionUser->price                = $payloads->payment_amount ?? 0;
+        $subscriptionUser->payment_gateway_id   = $payloads->payment_method ?? null;
+        $subscriptionUser->payment_details      = $payloads->payment_details ?? null;
+        $subscriptionUser->note                 = $payloads->note ?? null;
+        $subscriptionUser->forcefully_active    = 1;
+        $subscriptionUser->is_active            = 1;
+        $subscriptionUser->created_by_id        = userID() ?? null;
+        $subscriptionUser->user_id              = $payloads->user_id ?? session()->get('s_customer_id');
+        $subscriptionUser->save();
+
+        return $subscriptionUser;
+    }
+
+    /**
+     * Create usage record for a given subscription user
+     *
+     * @param object|SubscriptionUser $subscriptionUser
+     * @return SubscriptionUserUsage
+     */
+    public function assignSubscriptionPlanUsage(object $subscriptionUser)
+    {
+        $plan = \App\Models\SubscriptionPlan::find($subscriptionUser->subscription_plan_id);
+
+        $userUsage = new SubscriptionUserUsage();
+        $userUsage->subscription_user_id      = $subscriptionUser->id;
+        $userUsage->subscription_plan_id      = $plan->id ?? $subscriptionUser->subscription_plan_id;
+        $userUsage->start_at                  = date('Y-m-d');
+        $userUsage->expire_at                 = planEndDate($userUsage->subscription_plan_id);
+        $userUsage->platform                  = 1;
+        $userUsage->has_monthly_limit         = 1;
+
+        // branches
+        $userUsage->allow_unlimited_branches = $plan->allow_unlimited_branches ?? 0;
+        $userUsage->branch_balance           = $plan->total_branches ?? 0;
+        $userUsage->branch_balance_used      = 0;
+        $userUsage->branch_balance_remaining = $plan->total_branches ?? 0;
+
+        $userUsage->allow_kitchen_panel      = $plan->allow_kitchen_panel ?? 0;
+        $userUsage->allow_reservations       = $plan->allow_reservations ?? 0;
+        $userUsage->allow_support            = $plan->allow_support ?? 0;
+        $userUsage->allow_team               = $plan->allow_team ?? 0;
+
+        $userUsage->is_active                = \appStatic()::ACTIVE;
+        $userUsage->user_id                  = $subscriptionUser->user_id;
+        $userUsage->created_by_id            = userID() ?? null;
+        $userUsage->subscription_status      = appStatic()::PLAN_STATUS_ACTIVE;
+        $userUsage->save();
+
+        return $userUsage;
+    }
 }

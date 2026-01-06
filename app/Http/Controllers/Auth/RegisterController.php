@@ -9,55 +9,33 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Traits\Api\ApiResponseTrait;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use App\Services\Model\Customer\CustomerService;
 use App\Services\Model\SubscriptionPlan\SubscriptionPlanService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use App\Jobs\EmailConfirmationJob;
+use App\Services\SmsServices;
 
 class RegisterController extends Controller
 {
     use ApiResponseTrait;
-
-    /*
-    |--------------------------------------------------------------------------
-    | Register Controller
-    |--------------------------------------------------------------------------
-    |
-    | This controller handles the registration of new users as well as their
-    | validation and creation. By default this controller uses a trait to
-    | provide this functionality without requiring any additional code.
-    |
-    */
-
     use RegistersUsers;
 
-    /**
-     * Where to redirect users after registration.
-     *
-     * @var string
-     */
     protected $redirectTo = '/dashboard';
 
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
     public function __construct()
     {
         $this->middleware('guest');
     }
 
     /**
-     * Get a validator for an incoming registration request.
-     *
-     * @param  array  $data
-     * @return \Illuminate\Contracts\Validation\Validator
+     * Validator for registration request
      */
     protected function validator(array $data)
     {
-        $validateFormData = [
+        $rules = [
             'first_name'    => ['required', 'string', 'max:255'],
             'last_name'     => ['nullable', 'string', 'max:255'],
             'i_agree'       => ['required'],
@@ -68,92 +46,137 @@ class RegisterController extends Controller
         ];
 
         if (getSetting('registration_with') == 'email_and_phone') {
-            $validateFormData['mobile_no'] = ['required', 'string', 'max:15'];
+            $rules['mobile_no'] = ['required', 'string', 'max:15'];
         }
-        return Validator::make($data, $validateFormData);
+
+        return Validator::make($data, $rules);
     }
 
     /**
-     * Create a new user instance after a valid registration.
-     *
-     * @param  array  $data
-     * @return \App\Models\User
+     * Custom register method
      */
-    protected function create(array $data)
+    public function register(Request $request)
     {
+        // Validate input
+        $this->validator($request->all())->validate();
+
         try {
             DB::beginTransaction();
 
-            $referred_user_id = null;
+            // Create user
+            $user = $this->createUser($request->all());
 
-            # handle referral_code
-            if (getSetting('enable_affiliate_system') == 1 && isset($_COOKIE['referral_code'])) {
-                $referredByUser = User::query()->where('referral_code', $_COOKIE['referral_code'])->first();
+            // If registration requires verification, do NOT auto-login; send verification and return a message
+            $verificationType = getSetting('registration_verification_with');
 
-                if (!empty($referredByUser)) {
-                    $referred_user_id = $referredByUser->id;
-                }
+            if ($verificationType == 'email' || $verificationType == 'email_and_phone') {
+                // send verification email
+                EmailConfirmationJob::dispatchSync($user);
+
+                DB::commit();
+
+                return $this->sendResponse(
+                    appStatic()::SUCCESS,
+                    localize('A verification code has been sent to your email. Please verify your account before logging in.'),
+                    ['email' => $user->email, 'verification_sent' => true]
+                );
             }
 
-            $user = [
-                'first_name'        => $data['first_name'],
-                'last_name'         => $data['last_name'],
-                'email'             => $data['email'],
-                'mobile_no'         => isset($data['mobile_no']) ? $data['mobile_no'] : null,
-                'password'          => Hash::make($data['password']),
-                'user_type'         => appStatic()::TYPE_VENDOR,
-                "referred_user_id"  => $referred_user_id,
-                'email_verified_at' => getSetting('registration_verification_with') == 'disable' || !getSetting('registration_verification_with') ?  Carbon::now() : null,
-            ];
+            if ($verificationType == 'phone') {
+                // generate and send OTP via SMS
+                $otp = rand(100000, 999999);
+                $user->verification_code = $otp;
+                $user->save();
+                (new SmsServices())->phoneVerificationSms($user->mobile_no, $otp);
 
-            
+                DB::commit();
 
-            $user = User::query()->create($user);
-                        
-            // Login
-            // \Illuminate\Support\Facades\Auth::login($user);
-
-            $customerService           = new CustomerService();
-            $starterPlan               = (new SubscriptionPlanService)->starterPlan();
-
-            $subscriptionActionService = new SubscriptionActionService();
-
-            if (!empty($starterPlan)) {
-
-                $payloads = (object)[
-                    'payment_method'  => null,
-                    'payment_details' => null,
-                    'note'            => null,
-                    'payment_amount'  => 0,
-                    "subscription_plan_id" => $starterPlan->id,
-                    "user_id" => $user->id
-                ];
-
-                session()->put('s_customer_id', $user->id);
-
-                // Assign Plan
-                $subscriptionUser = $subscriptionActionService->assignSubscriptionPlan($payloads);
-
-                // Assign Plan Usages
-                $subscriptionActionService->assignSubscriptionPlanUsage($subscriptionUser);
-
-                // Update User subscription_plan_id
-                $customerService->updateUserSubscriptionPlanId($user, $starterPlan->id);
+                return $this->sendResponse(
+                    appStatic()::SUCCESS,
+                    localize('A verification code has been sent to your phone. Please verify your account before logging in.'),
+                    ['phone' => $user->mobile_no, 'verification_sent' => true]
+                );
             }
+
+            // Default: no verification required -> login
+            Auth::login($user);
 
             DB::commit();
 
-            return $user;
+            return $this->sendResponse(
+                appStatic()::SUCCESS,
+                "User registered successfully",
+                $user
+            );
+
         } catch (\Throwable $th) {
             DB::rollBack();
+
             wLog("Failed to register", errorArray($th));
 
             return $this->sendResponse(
                 appStatic()::VALIDATION_ERROR,
-                "Failed to register :" .$th->getMessage(),
-                [],                
+                "Failed to register: " . $th->getMessage(),
+                [],
                 errorArray($th)
             );
         }
+    }
+
+    /**
+     * Actual user creation + subscription assignment
+     */
+    protected function createUser(array $data)
+    {
+        $referred_user_id = null;
+
+        // Handle referral code
+        if (getSetting('enable_affiliate_system') == 1 && isset($_COOKIE['referral_code'])) {
+            $referredByUser = User::query()->where('referral_code', $_COOKIE['referral_code'])->first();
+            if ($referredByUser) {
+                $referred_user_id = $referredByUser->id;
+            }
+        }
+
+        // Create User
+        $user = User::create([
+            'first_name'        => $data['first_name'],
+            'last_name'         => $data['last_name'] ?? null,
+            'email'             => $data['email'],
+            'mobile_no'         => $data['mobile_no'] ?? null,
+            'password'          => Hash::make($data['password']),
+            'user_type'         => appStatic()::TYPE_VENDOR,
+            'referred_user_id'  => $referred_user_id,
+            'email_verified_at' => (getSetting('registration_verification_with') == 'disable' || !getSetting('registration_verification_with')) ? Carbon::now() : null,
+        ]);
+
+        // Assign starter subscription plan
+        $starterPlan = (new SubscriptionPlanService)->starterPlan();
+
+        if ($starterPlan) {
+            $customerService = new CustomerService();
+            $subscriptionActionService = new SubscriptionActionService();
+
+            $payloads = (object)[
+                'payment_method' => null,
+                'payment_details' => null,
+                'note' => null,
+                'payment_amount' => 0,
+                'subscription_plan_id' => $starterPlan->id,
+                'user_id' => $user->id
+            ];
+
+            // Save user_id in session if needed
+            session()->put('s_customer_id', $user->id);
+
+            // Assign plan and usage
+            $subscriptionUser = $subscriptionActionService->assignSubscriptionPlan($payloads);
+            $subscriptionActionService->assignSubscriptionPlanUsage($subscriptionUser);
+
+            // Update user subscription_plan_id
+            $customerService->updateUserSubscriptionPlanId($user, $starterPlan->id);
+        }
+
+        return $user;
     }
 }

@@ -4,11 +4,12 @@ namespace App\Services\Model\SystemSetting;
 
 use App\Models\SystemSetting;
 use App\Models\StorageManager;
+use App\Models\Currency;
 use Illuminate\Support\Facades\App;
 use App\Traits\File\FileUploadTrait;
 use App\Services\Feature\FeatureService;
 use App\Models\SystemSettingLocalization;
-use App\Services\Model\PaymentGateway\PaymentGatewayService;
+use App\Services\Model\PaymentGateway\PaymentGatewayService; 
 
 class SystemSettingService
 {
@@ -18,6 +19,7 @@ class SystemSettingService
     {
         $data = [];
         $data['storages']                = StorageManager::query()->where('is_active', 1)->get();
+        $data['currencies']              = Currency::query()->where('is_active', 1)->get();
         $data['paymentGateways']         = (new PaymentGatewayService())->paymentGateways([['is_active', 1]]);
         $data['affiliatePaymentMethods'] = getSetting('affiliate_payout_payment_methods') != null ? json_decode(getSetting('affiliate_payout_payment_methods')) : [];
         $data                            += $this->featureList();

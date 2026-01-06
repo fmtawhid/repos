@@ -30,7 +30,13 @@
                     <div class="col-md-6">
                         <x-form.label for="default_currency" label="{{ localize('Default Currency') }}" />
                         <x-form.select name="settings[default_currency]" id="default_currency">
-                            <option value="USD">{{ localize('USD') }}</option>
+                            @forelse ($currencies as $currency)
+                                <option value="{{ $currency->code }}" {{ (strtolower((string) getSetting('default_currency') ?? '') == strtolower((string) $currency->code)) ? 'selected' : '' }}>
+                                    {{ strtoupper($currency->code) }} - {{ $currency->name }}
+                                </option>
+                            @empty
+                                <option value="USD">{{ localize('USD') }}</option>
+                            @endforelse
                         </x-form.select>
                     </div>
                     <div class="col-md-6">
