@@ -15,8 +15,8 @@
         <td>{{ optional($row->plan)->title ?? "-" }}</td>
         <td>{{ dateFormat($row->created_at)  }}</td>
         <td class="text-center">
-            <a href="#" data-id={{ $row->id }} data-status={{ $row->is_active }} class="changeUserStatus">
-                {!! $row->is_active ? '<span class="text-success" title="Active"><i data-feather="check-circle" class="icon-14"></i></span>' : '<span class="text-danger" title="disable"><i data-feather="x-circle" class="icon-14"></i></span>' !!}
+            <a href="#" data-id={{ $row->id }} data-status={{ $row->account_status }} class="changeMerchantStatus">
+                {!! $row->account_status == 1 ? '<span class="text-success" title="Active"><i data-feather="check-circle" class="icon-14"></i></span>' : '<span class="text-danger" title="disable"><i data-feather="x-circle" class="icon-14"></i></span>' !!}
             </a>
         </td>
         <td class="text-center">
@@ -40,3 +40,4 @@
 
 {{ paginationFooter($merchants, 9) }}
 
+ 

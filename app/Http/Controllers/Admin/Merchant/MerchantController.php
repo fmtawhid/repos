@@ -86,13 +86,38 @@ class MerchantController extends Controller
     {
         if ($request->ajax()) {
             try {
+                DB::beginTransaction();
+
+                // Get subscription user ids for this merchant
+                $subscriptionUserIds = \App\Models\SubscriptionUser::withTrashed()->where('user_id', $merchant->id)->pluck('id')->toArray();
+
+                // Force delete subscription usages (handle soft-deleted records)
+                \App\Models\SubscriptionUserUsage::withTrashed()
+                    ->where('user_id', $merchant->id)
+                    ->orWhereIn('subscription_user_id', $subscriptionUserIds)
+                    ->get()
+                    ->each(function($usage){
+                        $usage->forceDelete();
+                    });
+
+                // Force delete subscription users
+                \App\Models\SubscriptionUser::withTrashed()->where('user_id', $merchant->id)->get()->each(function($sub){
+                    $sub->forceDelete();
+                });
+
+                // Finally, force delete merchant
+                $deleted = $merchant->forceDelete();
+
+                DB::commit();
+
                 return $this->sendResponse(
                     $this->appStatic::SUCCESS,
                     localize("Successfully deleted merchant"),
-                    $merchant->delete()
+                    $deleted
                 );
             }
             catch (\Throwable $e) {
+                DB::rollBack();
                 wLog("Failed to Delete merchant", errorArray($e));
                 return $this->sendResponse(
                     $this->appStatic::VALIDATION_ERROR,

@@ -17,11 +17,14 @@ class ActiveStatusService
      * */
     public function updateActiveStatus($model)
     {
-        if(currentRoute() == "admin.users.statusUpdate"){
-            $data['account_status'] = !$model->is_active;
-        }else{
+        // If model uses account_status (users/merchants) toggle between 1 (active) and 2 (inactive)
+        if (isset($model->account_status)) {
+            $data['account_status'] = ($model->account_status == 1) ? 2 : 1;
+        } else {
+            // Fallback for models that use boolean is_active
             $data['is_active'] = !$model->is_active;
         }
+
         $model->update($data);
 
         return $model;

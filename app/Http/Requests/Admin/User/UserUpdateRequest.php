@@ -29,7 +29,7 @@ class UserUpdateRequest extends FormRequest
     {
 
         //Branch is required only for vendor and team not for admin
-        $vendorOrTeam = isAdmin() || isVendor() ? true  : false;
+        $vendorOrTeam = isVendorUserGroup() ? true : false;
 
         return [
             "first_name" => "required|string",

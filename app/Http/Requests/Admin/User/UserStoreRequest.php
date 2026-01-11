@@ -29,7 +29,7 @@ class UserStoreRequest extends FormRequest
     public function rules(): array
     {
         //Branch is required only for vendor and team not for admin
-        $vendorOrTeam = isAdmin() || isVendor() ? true  : false;
+        $vendorOrTeam = isVendorUserGroup() ? true : false;
 
         info("User Incoming : ".json_encode(request()->all()));
         // "email:rfc,dns"

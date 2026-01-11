@@ -73,14 +73,27 @@ class PosDashboardController extends Controller
                 }
 
                 // Load Carts
+                // if ($request->has("loadCarts")) {
+
+                //     return $this->sendResponse(
+                //         appStatic()::SUCCESS_WITH_DATA,
+                //         localize("Carts Loaded Successfully"),
+                //         (new CartActionService())->init() // Will get cart_items, sub_total, tax, grand_total of the cart
+                //     );
+                // }
                 if ($request->has("loadCarts")) {
+
+                    $discount_value = $request->discount_value ?? 0;
+                    $discount_type  = $request->discount_type ?? 'fixed';
+                    $shipping_cost  = $request->total_shipping_cost ?? 0;
 
                     return $this->sendResponse(
                         appStatic()::SUCCESS_WITH_DATA,
                         localize("Carts Loaded Successfully"),
-                        (new CartActionService())->init() // Will get cart_items, sub_total, tax, grand_total of the cart
+                        (new CartActionService())->init($discount_value, $discount_type, $shipping_cost)
                     );
                 }
+
 
 
                 // Load Tables

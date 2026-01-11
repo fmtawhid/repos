@@ -105,6 +105,7 @@ class StatusUpdateController extends Controller
             "admin.subscription-plans.statusUpdate"      => new SubscriptionPlan(),
             "admin.offline-payment-methods.statusUpdate" => new OfflinePaymentMethod(),
             "admin.roles.statusUpdate"                   => new Role(),
+            "admin.merchants.statusUpdate"               => new User(),
             "admin.users.statusUpdate"                   => new User(),
         ];
 

@@ -132,6 +132,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'v
     //------------------------------------------------------
     Route::resource("merchants", MerchantController::class);
     Route::get('merchants-export', [MerchantController::class, 'exports'])->name('merchants.export');
+    Route::post("merchants/active-status-update/{id}", [StatusUpdateController::class, "updateActiveStatus"])->name("merchants.statusUpdate");
 
 
     // Route::get("documents", [ProjectController::class, 'index'])->name('documents.index');

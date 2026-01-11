@@ -238,14 +238,21 @@ class CartActionService
         }
 
         // Max Unit Weight of the product shipping cost
-        $shippingCost = empty($cartItems) ? 0 : $this->calculateShippingCost($cartItems);
+        // Allow overriding shipping cost via request (from POS inputs)
+        $shippingCost = request()->has('total_shipping_cost') ? (float) request()->total_shipping_cost : (empty($cartItems) ? 0 : $this->calculateShippingCost($cartItems));
+
+        // Order level discount (flat or percentage) from POS inputs
+        $orderDiscountTotal = 0;
+        if (request()->has('discount_type')) {
+            $orderDiscountTotal = (double) discountCalculations($cartSubTotal, (float) (request()->discount_value ?? 0), request()->discount_type);
+        }
 
         return [
             "cart_sub_total"      => $cartSubTotal,
             "cart_total_qty"      => $totalQty,
-            "cart_total_discount" => $totalDiscount,
+            "cart_total_discount" => $totalDiscount + $orderDiscountTotal,
             "cart_total_tax"      => $totalTax,
-            "cart_grand_total"    => $grandTotal + $shippingCost, // Shipping cost addition with grand total
+            "cart_grand_total"    => ($grandTotal + $shippingCost) - $orderDiscountTotal, // Shipping cost added and order discount subtracted
             "cart_items"          => $cartItems,
             "cart_shipping_cost"  => $shippingCost,
         ];
@@ -253,10 +260,32 @@ class CartActionService
 
     public function calculateShippingCost($cartItems)
     {
+        $maxUnitWeight = 0;
 
-        $maxUnitWeight = array_reduce($cartItems, function ($carry, $item) {
-            return max($carry, $item['unit_weight']);
-        }, 0);
+        if (empty($cartItems)) {
+            return 0;
+        }
+
+        foreach ($cartItems as $item) {
+            $unitWeight = 0;
+
+            // array of prepared cart items
+            if (is_array($item)) {
+                $unitWeight = $item['unit_weight'] ?? 0;
+            } elseif (is_object($item)) {
+                // Eloquent Cart model with relation productAttribute
+                if (isset($item->productAttribute) && isset($item->productAttribute->weight)) {
+                    $unitWeight = $item->productAttribute->weight ?? 0;
+                } elseif (isset($item->product) && isset($item->product->variations) && $item->product->variations->count()) {
+                    $var = $item->product->variations->first();
+                    $unitWeight = $var->weight ?? 0;
+                } elseif (isset($item->productVariation) && is_array($item->productVariation)) {
+                    $unitWeight = $item->productVariation['weight'] ?? 0;
+                }
+            }
+
+            $maxUnitWeight = max($maxUnitWeight, (float) $unitWeight);
+        }
 
         $shippingCost = 0; // ShippingChargeFacade::calculateShippingCost($maxUnitWeight);
 

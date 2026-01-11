@@ -22,7 +22,58 @@
         showElement('.password_wrapper');
         $('form#addMerchantFrm').attr('action', "{{ route('admin.merchants.store') }}");
         $('form#addMerchantFrm input:hidden[name=_method]').val('POST');
+        // Ensure account status is visible and default to active
+        $('#addMerchantFrm #account_status').closest('.mb-3').show();
+        $('#addMerchantFrm #account_status').val({{ appStatic()::ACCOUNT_STATUS_ACTIVE }}).change();
     })
+
+    // edit user
+    $('body').on('click', '.editIcon', function(){
+        let userId = parseInt($(this).data("id"));
+        let actionUrl = $(this).data('url');
+        let updateUrl = $(this).data('update-url');
+        $('#addMerchantFrm .offcanvas-title').text("{{ localize('Update Vendor') }}");
+        $('#addMerchantSideBar').offcanvas('show');
+        resetForm('form#addMerchantFrm');
+        resetFormErrors('form#addMerchantFrm');
+        hideElement('.password_wrapper');
+        $('.selected-file').html('');
+        $('form#addMerchantFrm').attr('action', updateUrl);
+        $("form#addMerchantFrm [name='_method']").attr('value', 'PUT');
+
+        var callParams  = {};
+        callParams.type = "GET";
+        callParams.url  = actionUrl;
+        callParams.data = "";
+        loadingInContent('#loader', 'loading...');
+        hideElement('.offcanvas-body');
+        ajaxCall(callParams, function (result) {
+            resetLoading('#loader', '');
+            showElement('.offcanvas-body');
+            if(result.data) {
+                let user = result.data;
+
+                console.log('user', user);
+
+                $('#addMerchantFrm #id').val(user.id);
+                $('#addMerchantFrm #first_name').val(user.first_name);
+                $('#addMerchantFrm #last_name').val(user.last_name);
+                $('#addMerchantFrm #email').val(user.email);
+                $('#addMerchantFrm #user_type').val(user.user_type).change();
+                $('#addMerchantFrm #mobile_no').val(user.mobile_no);
+                $('#addMerchantFrm #avatar').val(user.avatar);
+                // Hide account status on edit - status not editable from edit form
+                $('#addMerchantFrm #account_status').closest('.mb-3').hide();
+                if(user.avatar){
+                    getChosenFilesCount();
+                    showSelectedFilePreviewOnLoad();
+                }
+            }
+        }, function (err, type, httpStatus) {
+
+        });
+
+    });
 
     // search
     $('body').on('click', '#searchBtn', function(e){
@@ -117,7 +168,8 @@
                 $('#addMerchantFrm #user_type').val(user.user_type).change();
                 $('#addMerchantFrm #mobile_no').val(user.mobile_no);
                 $('#addMerchantFrm #avatar').val(user.avatar);
-                $('#addMerchantFrm #is_active').val(user.account_status).change();
+                // Hide account status on edit - status not editable from edit form
+                $('#addMerchantFrm #account_status').closest('.mb-3').hide();
                 if(user.avatar){
                     getChosenFilesCount();
                     showSelectedFilePreviewOnLoad();
@@ -129,7 +181,7 @@
 
     });
 
-    // change user's status
+    // change merchant's status
     $('body').on('click', '.changeMerchantStatus', function(){
         let userId = parseInt($(this).data("id"));
         let status = parseInt($(this).data("status"));
@@ -142,11 +194,8 @@
             if (result.isConfirmed) {
                 var callParams  = {};
                 callParams.type = "POST";
-                callParams.url  = "admin/update-admin-status/"+userId;
+                callParams.url  = "{{ route('admin.merchants.statusUpdate', ['id' => ':id']) }}".replace(':id', userId);
                 callParams.data = {
-                    id: userId,
-                    modelName: "city",
-                    is_active: status ? 0 : 1,
                     _token : "{{ csrf_token() }}"
                 };
                 ajaxCall(callParams, function (result) {
@@ -159,8 +208,8 @@
         });
     });
 
-    // delete user
-    $('body').on('click', '.deleteCustomer', function(){
+    // delete merchant
+    $('body').on('click', '.deleteMerchant', function(){
         let userId = parseInt($(this).data("id"));
 
         let actionUrl = $(this).data('url');

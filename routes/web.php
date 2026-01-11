@@ -157,3 +157,5 @@ Route::group(['middleware'=>'isAllowFrontend'], function(){
     Route::post('subscribe-frontend', [SubscribersController::class, 'store'])->name('subscribe.store');
     Route::get('pages/{slug}', [FrontendController::class, 'page'])->name('pages');
 });
+Route::post('/cart/update-discount', [CartController::class, 'updateDiscount'])
+    ->name('carts.updateDiscount');

@@ -31,7 +31,9 @@ class PosOrderService
             $orderDiscountTotal = (double) discountCalculations($orderTotal,$discountValue, $discountType);
         }
 
-        $payableAfterDiscount = getCartGrandTotal($cartInfo) - $orderDiscountTotal;
+        // getCartGrandTotal already includes the order-level discount (and shipping override),
+        // so don't subtract the discount twice when computing payable amount.
+        $payableAfterDiscount = getCartGrandTotal($cartInfo);
 
         $orderPayload =$data+[
             "status_id"              => constantFlags()::ORDER_PENDING,
@@ -87,7 +89,7 @@ class PosOrderService
 
         $totalTaxAmount      = 0;
         $subTotalAmount      = 0;
-        $shippingTotalAmount = request()->has("total_shipping_cost") ? (request()->total_shipping_cost ?? 0) : $cartService->calculateShippingCosts(true, $carts);
+        $shippingTotalAmount = request()->has("total_shipping_cost") ? (request()->total_shipping_cost ?? 0) : $cartService->calculateShippingCost($carts);
         $discountTotalAmount = 0;
 
         $orderProductQty = 0;

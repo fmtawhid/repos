@@ -118,9 +118,8 @@
             <div class="mb-3">
                 <x-form.label for="account_status" label="{{ localize('Account Status') }}" />
                 <x-form.select name="account_status" id="account_status">
-                    <option value="">{{localize('Select Account Status')}}</option>
                     @foreach (appStatic()::ACCOUNT_STATUS_LIST as $userStatusId => $userStatus)
-                        <option value="{{ $userStatusId }}">{{ $userStatus }}</option>
+                        <option value="{{ $userStatusId }}" {{ $userStatusId == appStatic()::ACCOUNT_STATUS_ACTIVE ? 'selected' : '' }}>{{ $userStatus }}</option>
                     @endforeach
                 </x-form.select>
             </div>

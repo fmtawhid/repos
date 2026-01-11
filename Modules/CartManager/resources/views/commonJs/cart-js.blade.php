@@ -944,4 +944,57 @@
     searchProducts();
 
 
+
+   // ===============================
+// POS Discount Live Update (FINAL)
+// ===============================
+$(document).on('input change', '#additional_discount_value, #total_shipping_cost, select[name="discount_type"]', function () {
+    getCartInfoWithDiscount();
+});
+
+function getCartInfoWithDiscount() {
+    let discountValue = $('#additional_discount_value').val() || 0;
+    let discountType  = $('select[name="discount_type"]').val();
+    let shippingCost  = $('#total_shipping_cost').val() || 0;
+
+    $.ajax({
+        url: URL_CART_INFO,
+        data: {
+            loadCarts: true,
+            discount_value: discountValue,
+            discount_type: discountType,
+            total_shipping_cost: shippingCost,
+            is_pos_route: IS_POS_ROUTE
+        },
+        dataType: 'json',
+        success: function(response) {
+            posDataSet(response); // updates cart totals in DOM
+        }
+    });
+}
+
+
+// ===============================
+// Payment Method Active Style
+// ===============================
+$(document).on('change', 'input[name="payment_method"]', function () {
+
+    // remove active from all
+    $('.tt-payment').removeClass('active');
+
+    // add active to selected
+    $(this).closest('.tt-single-pos-payment')
+           .find('.tt-payment')
+           .addClass('active');
+});
+
+// page load default checked
+$(document).ready(function () {
+    $('input[name="payment_method"]:checked')
+        .closest('.tt-single-pos-payment')
+        .find('.tt-payment')
+        .addClass('active');
+});
+
+
 </script>

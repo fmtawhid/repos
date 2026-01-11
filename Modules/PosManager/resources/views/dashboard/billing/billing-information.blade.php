@@ -4,7 +4,7 @@
             <p class="mb-0">{{ localize("Subtotal") }}</p>
             <strong class="posCartSubTotal">0</strong>
         </div>
-        <div class="tt-pos-cal">
+        <!-- <div class="tt-pos-cal">
             <p class="mb-0">{{ localize("Shipping Charge") }}</p>
             <input class="form-control form-control-sm"
                    type="number"
@@ -14,7 +14,7 @@
                    step="0.001"
                    min="0"
                    name="total_shipping_cost">
-        </div>
+        </div> -->
         <div class="tt-pos-cal">
             <label for="discount_value" class="form-label">{{ localize("Discount") }}</label>
             <div class="input-group d-flex align-items-center gap-2">
@@ -77,3 +77,15 @@
     </div>
 
 </div>
+<style>
+    .tt-payment {
+    border: 1px solid #ddd;
+    transition: all 0.2s ease;
+}
+
+.tt-payment.active {
+    border: 2px solid #0d6efd;
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+</style>

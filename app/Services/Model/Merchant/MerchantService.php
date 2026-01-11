@@ -82,7 +82,8 @@ class MerchantService
         $user->user_type            = appStatic()::TYPE_VENDOR;
         $user->avatar               = $payloads->avatar;
         $user->subscription_plan_id = $subscription_plan_id;
-        $user->account_status       = $payloads->account_status;
+        // Default to active when not provided
+        $user->account_status       = $payloads->account_status ?? appStatic()::ACCOUNT_STATUS_ACTIVE;
         $user->email_verified_at    = Carbon::now();
         $user->password             = Hash::make($payloads->password);
         $user->save();
@@ -130,61 +131,30 @@ class MerchantService
     public function storeSubscriptionPlanUserUsage($subscription_user_id, $plan)
     {
         $userUsage = new SubscriptionUserUsage();
-        $userUsage->subscription_user_id           = $subscription_user_id;
-        $userUsage->subscription_plan_id           = $plan->id;
-        $userUsage->start_at                       = date('Y-m-d');
-        $userUsage->expire_at                      = planEndDate($plan->id);
-        $userUsage->platform                       = 1;
-        $userUsage->has_monthly_limit              = 1;
-        $userUsage->word_balance                   = $plan->total_words_per_month ?? 0;
-        $userUsage->word_balance_used              = 0;
-        $userUsage->word_balance_remaining         = $plan->total_words_per_month ?? 0;
-        $userUsage->word_balance_t2s               = $plan->total_text_to_speech_per_month ?? 0;
-        $userUsage->word_balance_used_t2s          = 0;
-        $userUsage->word_balance_remaining_t2s     = $plan->total_text_to_speech_per_month ?? 0;
-        $userUsage->image_balance                  = $plan->total_images_per_month ?? 0;
-        $userUsage->image_balance_used             = 0;
-        $userUsage->image_balance_remaining        = $plan->total_images_per_month ?? 0;
-        $userUsage->video_balance                  = $plan->total_ai_video_per_month ?? 0;
-        $userUsage->video_balance_used             = 0;
-        $userUsage->video_balance_remaining        = $plan->total_ai_video_per_month ?? 0;
-        $userUsage->speech_balance                 = $plan->total_speech_to_text_per_month ?? 0;
-        $userUsage->speech_balance_used            = 0;
-        $userUsage->speech_balance_remaining       = $plan->total_speech_to_text_per_month ?? 0;
-        $userUsage->allow_unlimited_word           = $plan->allow_unlimited_word ?? 0;
-        $userUsage->allow_unlimited_text_to_speech = $plan->allow_unlimited_text_to_speech ?? 0;
-        $userUsage->allow_unlimited_image          = $plan->allow_unlimited_image ?? 0;
-        $userUsage->allow_unlimited_speech_to_text = $plan->allow_unlimited_speech_to_text ?? 0;
-        $userUsage->speech_to_text_filesize_limit  = $plan->speech_to_text_filesize_limit ?? 0;
-        $userUsage->allow_words                    = $plan->allow_words ?? 0;
-        $userUsage->allow_text_to_speech           = $plan->allow_text_to_speech ?? 0;
-        $userUsage->allow_ai_code                  = $plan->allow_ai_code ?? 0;
-        $userUsage->allow_google_cloud             = $plan->allow_google_cloud ?? 0;
-        $userUsage->allow_azure                    = $plan->allow_azure ?? 0;
-        $userUsage->allow_ai_video                 = $plan->allow_ai_video ?? 0;
-        $userUsage->allow_ai_chat                  = $plan->allow_ai_chat ?? 0;
-        $userUsage->allow_templates                = $plan->allow_templates ?? 0;
-        $userUsage->allow_ai_rewriter              = $plan->allow_ai_rewriter ?? 0;
-        $userUsage->allow_ai_detector              = $plan->allow_ai_detector ?? 0;
-        $userUsage->allow_ai_plagiarism            = $plan->allow_ai_plagiarism ?? 0;
-        $userUsage->allow_ai_image_chat            = $plan->allow_ai_image_chat ?? 0;
-        $userUsage->allow_speech_to_text           = $plan->allow_speech_to_text ?? 0;
-        $userUsage->allow_images                   = $plan->allow_images ?? 0;
-        $userUsage->allow_sd_images                = $plan->allow_sd_images ?? 0;
-        $userUsage->allow_dall_e_2_image           = $plan->allow_dall_e_2_image ?? 0;
-        $userUsage->allow_dall_e_3_image           = $plan->allow_dall_e_3_image ?? 0;
-        $userUsage->allow_ai_pdf_chat              = $plan->allow_ai_pdf_chat ?? 0;
-        $userUsage->allow_eleven_labs              = $plan->allow_eleven_labs ?? 0;
-        $userUsage->allow_real_time_data           = $plan->allow_real_time_data ?? 0;
-        $userUsage->allow_blog_wizard              = $plan->allow_blog_wizard ?? 0;
-        $userUsage->allow_ai_vision                = $plan->allow_ai_vision ?? 0;
-        $userUsage->allow_team                     = $plan->allow_team ?? 0;
-        $userUsage->has_free_support               = $plan->has_free_support ?? 0;
-        $userUsage->is_active                      = \appStatic()::ACTIVE;
-        $userUsage->user_id                        = session()->get('s_merchant_id');
-        $userUsage->created_by_id                  = userID();
-        $userUsage->subscription_status            = appStatic()::PLAN_STATUS_ACTIVE;
+        $userUsage->subscription_user_id = $subscription_user_id;
+        $userUsage->subscription_plan_id = $plan->id;
+        $userUsage->start_at = date('Y-m-d');
+        $userUsage->expire_at = planEndDate($plan->id);
+        $userUsage->platform = 1;
+        $userUsage->has_monthly_limit = 1;
+
+        // Map only the fields that exist in the `subscription_user_usages` table
+        $userUsage->allow_unlimited_branches = $plan->allow_unlimited_branches ?? 0;
+        $userUsage->branch_balance = $plan->branch_balance ?? 0;
+        $userUsage->branch_balance_used = 0;
+        $userUsage->branch_balance_remaining = $userUsage->branch_balance;
+
+        $userUsage->allow_kitchen_panel = $plan->allow_kitchen_panel ?? 0;
+        $userUsage->allow_reservations = $plan->allow_reservations ?? 0;
+        $userUsage->allow_support = $plan->allow_support ?? 0;
+        $userUsage->allow_team = $plan->allow_team ?? 0;
+
+        $userUsage->is_active = \appStatic()::ACTIVE;
+        $userUsage->user_id = session()->get('s_merchant_id');
+        $userUsage->created_by_id = userID();
+        $userUsage->subscription_status = appStatic()::PLAN_STATUS_ACTIVE;
         $userUsage->save();
+        return $userUsage;
     }
     public function update($id, object $request)
     {
