@@ -170,9 +170,9 @@
                 @if(isRouteExists('admin.email-templates.index'))
                     <li><a href="{{ route('admin.email-templates.index') }}">{{ localize('Email Template') }}</a></li>
                 @endif
-                @if(isRouteExists('admin.languages.index'))
+                <!-- @if(isRouteExists('admin.languages.index'))
                     <li><a href="{{ route('admin.languages.index') }}">{{ localize('Languages') }}</a></li>
-                @endif
+                @endif -->
                 @if(isRouteExists('admin.currencies.index'))
                     <li><a href="{{ route('admin.currencies.index') }}">{{ localize('Multi Currency') }}</a></li>
                 @endif
@@ -182,12 +182,12 @@
                 @if(isRouteExists('admin.offline-payment-methods.index'))
                     <li><a href="{{ route('admin.offline-payment-methods.index') }}">{{ localize('Offline Payment') }}</a></li>
                 @endif
-                @if(isRouteExists('admin.cron-list'))
+                <!-- @if(isRouteExists('admin.cron-list'))
                     <li><a href="{{ route('admin.cron-list') }}">{{ localize('Cron List') }}</a></li>
-                @endif
-                @if(isRouteExists('admin.pwa-settings.index'))
+                @endif -->
+                <!-- @if(isRouteExists('admin.pwa-settings.index'))
                     <li><a href="{{ route('admin.pwa-settings.index') }}">{{ localize('PWA Settings') }}</a></li>
-                @endif
+                @endif -->
                 @if(isRouteExists('admin.utilities'))
                     <li><a href="{{ route('admin.utilities') }}">{{ localize('Utilities') }}</a></li>
                 @endif
@@ -200,22 +200,6 @@
             </ul>
         </div>
     </li>
-@endif
-
-
-
-
-@php
-    $faqRoutes = ['admin.faqs.index', 'admin.faqs.create', 'admin.faqs.edit'];
-@endphp
-
-@if(isMenuGroupShow($faqRoutes))
-<li class="side-nav-item nav-item">
-    <a href="{{ route('admin.faqs.index') }}" class="side-nav-link">
-        <span class="tt-nav-link-icon"><i data-feather="help-circle"></i></span>
-        <span class="tt-nav-link-text">{{ localize('FAQs') }}</span>
-    </a>
-</li>
 @endif
 
 
@@ -235,9 +219,9 @@
             @if(isRouteExists('admin.media-managers.index'))
                 <li><a href="{{ route('admin.media-managers.index') }}">{{ localize('Media Library') }}</a></li>
             @endif
-            @if(isRouteExists('admin.uppy.index'))
+            <!-- @if(isRouteExists('admin.uppy.index'))
                 <li><a href="{{ route('admin.uppy.index') }}">{{ localize('File Uploader') }}</a></li>
-            @endif
+            @endif -->
         </ul>
     </div>
 </li>

@@ -57,6 +57,10 @@ class UserController extends Controller
             $user = $this->userService->store($data);
             // User Role Assign
             $roles = $this->userService->userRoleAssign($user, $request->role_id);
+
+            // Bump user's menu permission version so their menu is rebuilt on next request
+            $user->update(["menu_permission_version" => $user->menu_permission_version + 1]);
+
             DB::commit();
             return $this->sendResponse(
                 $this->appStatic::SUCCESS_WITH_DATA,

@@ -1,7 +1,6 @@
     <ul class="tt-side-nav">
-        @if(isAdmin() || isVendorTeam())
+        @if(isAdminUserGroup())
             @include('common.admin-sidebar')
-            
         @elseif (isVendor() || isVendorTeam())
             @include('common.vendor-sidebar')
         @endif

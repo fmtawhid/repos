@@ -42,9 +42,10 @@ class RoleController extends Controller
             $role = $roleService->store($request->validated());
 
             // Role Permission Save
-            // $roleService->rolePermissionStore($role, $request->routes);
             $roleService->rolePermissionStore($role, $request->routes ?? []);
 
+            // Update affected users' menu permission version so their session menus rebuild
+            $roleService->roleUsersMenuPermissionIncrease($role);
 
             DB::commit();
 

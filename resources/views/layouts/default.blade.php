@@ -9,7 +9,7 @@
     <!--meta-->
     <meta name="description" content="@yield('description', 'Restors Pos Manager - A complete solution for managing your point of sale system')">
     <meta name="keywords" content="@yield('keywords', 'pos, pos manager, point of sale, pos system, sales management, inventory management, customer management, sales reporting')">
-    <meta name="author" content="ThemeTags">
+    <meta name="author" content="Rafusoft">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @yield('meta')
     <!--favicon icon-->
@@ -62,6 +62,8 @@
 </head>
 
 <body>
+
+
     <input type="hidden" value="{{env('PWA_URL')}}" id="PWA_URL">
     <!--preloader start-->
     @if(getSetting('enable_preloader') !=0)

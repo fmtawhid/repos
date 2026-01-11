@@ -1006,36 +1006,36 @@ if (!function_exists('imageMimes')) {
 
 
 # Is Route exits used in sidebar nav
-// if (!function_exists('isRouteExists')) {
-//     function isRouteExists($route = null)
-//     {
-//         $route = is_null($route) ? currentRoute() : $route;
+if (!function_exists('isRouteExists')) {
+    function isRouteExists($route = null)
+    {
+        $route = is_null($route) ? currentRoute() : $route;
 
-//         // If it's Admin Allow the routes
-//         if (isAdmin() || isVendor()) {
-//             return true;
-//         }
+        // If it's Admin Allow the routes
+        if (isAdmin() || isVendor()) {
+            return true;
+        }
 
-//         // return true; // Temporary till production.
-//         if(in_array($route, ['dashboard', 'admin.dashboard'])) return true;
+        // return true; // Temporary till production.
+        if(in_array($route, ['dashboard', 'admin.dashboard'])) return true;
 
-//         return array_key_exists($route, userPermissions());
-//     }
-// }
-function isRouteExists($route = null)
-{
-    $route = is_null($route) ? currentRoute() : $route;
-
-    if (isAdmin() || isVendor()) {
-        return true;
+        return array_key_exists($route, userPermissions());
     }
-
-    if (in_array($route, ['dashboard', 'admin.dashboard'])) return true;
-
-    // এখানে safe-check
-    $permissions = userPermissions() ?? [];   // null হলে empty array বানাই
-    return array_key_exists($route, $permissions);
 }
+// function isRouteExists($route = null)
+// {
+//     $route = is_null($route) ? currentRoute() : $route;
+
+//     if (isAdmin() || isVendor()) {
+//         return true;
+//     }
+
+//     if (in_array($route, ['dashboard', 'admin.dashboard'])) return true;
+
+//     // এখানে safe-check
+//     $permissions = userPermissions() ?? [];   // null হলে empty array বানাই
+//     return array_key_exists($route, $permissions);
+// }
 
 
 
