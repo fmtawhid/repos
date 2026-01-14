@@ -32,5 +32,16 @@
 
         getDataList();
     });
+
+    // Export handler
+    $('body').on('click', '#exportBtn', function() {
+        if (gFilterObj.hasOwnProperty('page')) {
+            delete gFilterObj.page;
+        }
+        var url = "{{ route('admin.reports.reservations.export') }}" + (gFilterObj ? '?' + $.param(gFilterObj) : '');
+        if (url.indexOf('?') === -1) url += '?export=1'; else url += '&export=1';
+        window.open(url, '_blank');
+    });
+
     getDataList();
 </script>

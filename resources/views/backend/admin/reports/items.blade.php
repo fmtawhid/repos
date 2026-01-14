@@ -46,7 +46,11 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-auto ms-auto">
+                                    <div class="col-auto ms-auto d-flex gap-2">
+                                        <x-form.button color="primary" type="button" class="btn-sm" id="exportBtn">
+                                            <i data-feather="download" class="icon-14"></i>
+                                            {{ localize('Export PDF') }}
+                                        </x-form.button>
                                         <x-form.button color="dark" type="button" class="btn-sm" id="searchBtn">
                                             <i data-feather="search" class="icon-14"></i>
                                             {{ localize('Search') }}

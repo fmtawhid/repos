@@ -29,5 +29,17 @@
 
         getDataList();
     });
+
+    // Export handler
+    $('body').on('click', '#exportBtn', function() {
+        if (gFilterObj.hasOwnProperty('page')) {
+            delete gFilterObj.page;
+        }
+        var url = "{{ route('admin.reports.items.export') }}" + (gFilterObj ? '?' + $.param(gFilterObj) : '');
+        // add export flag in case server wants it
+        if (url.indexOf('?') === -1) url += '?export=1'; else url += '&export=1';
+        window.open(url, '_blank');
+    });
+
     getDataList();
 </script>

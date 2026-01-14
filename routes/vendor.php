@@ -84,10 +84,21 @@ Route::middleware(["auth","vendor"])->prefix("vendor")->name("admin.")->group(fu
     Route::name("reports.")->prefix("reports")->group(function () {
 
         Route::get('/reservations', [ReportsController::class, 'reservationsReports'])->name('reservations');
+        Route::get('/reservations/export', [ReportsController::class, 'exportReservationsPdf'])->name('reservations.export');
+
         Route::get('/subscriptions', [ReportsController::class, 'subscriptionReports'])->name('subscriptions');
+        Route::get('/subscriptions/export', [ReportsController::class, 'exportSubscriptionsPdf'])->name('subscriptions.export');
+
         Route::get('/items-category', [ReportsController::class, 'itemCategoryReports'])->name('items_category');
+        Route::get('/items-category/export', [ReportsController::class, 'exportItemCategoryPdf'])->name('items_category.export');
+
         Route::get('/teams', [ReportsController::class, 'teamsReports'])->name('teams');
+        Route::get('/teams/export', [ReportsController::class, 'exportTeamsPdf'])->name('teams.export');
+
         Route::get('/sales', [ReportsController::class, 'salesReports'])->name('sales');
+        Route::get('/sales/export', [ReportsController::class, 'exportSalesPdf'])->name('sales.export');
+
         Route::get('/items', [ReportsController::class, 'itemReports'])->name('items');
+        Route::get('/items/export', [ReportsController::class, 'exportItemsPdf'])->name('items.export');
     });
 });

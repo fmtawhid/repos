@@ -43,7 +43,7 @@ class ReservationService
         return $isPaginateGetOrPluck ? $query->paginate(maxPaginateNo()) : $query->get();
     }
 
-    public function getReservationReports($forVendor = false)
+    public function getReservationReports($forVendor = false, $export = false)
     {
         $date_range = request()->date_range ?? null;
         $query = Reservation::query()->filters();
@@ -71,6 +71,10 @@ class ReservationService
 
         if($status_id){
             $query->where('status_id', $status_id);
+        }
+
+        if ($export) {
+            return $query->get();
         }
 
         return $query->paginate(maxPaginateNo() ?? 10);

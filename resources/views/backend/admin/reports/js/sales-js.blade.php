@@ -1,11 +1,11 @@
 <script>
     "use strict";
     function getDataList() {
-        var callParams      = {};
-        callParams.type     = "GET";
+        var callParams = {};
+        callParams.type = "GET";
         callParams.dataType = "html";
-        callParams.url      = "{{ route('admin.reports.items_category') }}" + (gFilterObj ? '?' + $.param(gFilterObj) : '');
-        callParams.data     = '';
+        callParams.url = "{{ route('admin.reports.sales') }}" + (gFilterObj ? '?' + $.param(gFilterObj) : '');
+        callParams.data = '';
         ajaxCall(callParams, function(result) {
             $('tbody').empty().html(result);
             feather.replace();
@@ -13,14 +13,15 @@
     }
     $('body').on('click', '#searchBtn', function() {
         var date_range = $('#date_range').val();
-        var user_id = $('#user_id :selected').val();
-        var template_id = $('#template_id :selected').val();
+        var search = $('#search').val();
 
-        gFilterObj.date_range  = date_range;
-        gFilterObj.user_id     = user_id;
-        gFilterObj.template_id = template_id;
+        gFilterObj.date_range = date_range;
+        gFilterObj.search = search;
+        // ensure detailed/per-product mode
+        gFilterObj.per_product = 1;
+
         loadingInTable("tbody",{
-            colSpan: 5,
+            colSpan: 11,
             prop: false,
         });
 
@@ -30,5 +31,21 @@
 
         getDataList();
     });
+
+    // Export handler
+    $('body').on('click', '#exportBtn', function() {
+        if (gFilterObj.hasOwnProperty('page')) {
+            delete gFilterObj.page;
+        }
+        // ensure export uses detailed/per-product mode
+        gFilterObj.per_product = 1;
+        var url = "{{ route('admin.reports.sales.export') }}" + (gFilterObj ? '?' + $.param(gFilterObj) : '');
+        if (url.indexOf('?') === -1) url += '?export=1'; else url += '&export=1';
+        window.open(url, '_blank');
+    });
+
+    // set default per_product mode so initial load is detailed
+    gFilterObj.per_product = 1;
+
     getDataList();
 </script>

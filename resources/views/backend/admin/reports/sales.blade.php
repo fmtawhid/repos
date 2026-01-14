@@ -46,7 +46,11 @@
                                     </div>
                                     
 
-                                    <div class="col-auto ms-auto">
+                                    <div class="col-auto ms-auto d-flex gap-2">
+                                        <x-form.button color="primary" type="button" class="btn-sm" id="exportBtn">
+                                            <i data-feather="download" class="icon-14"></i>
+                                            {{ localize('Export PDF') }}
+                                        </x-form.button>
                                         <x-form.button color="dark" type="button" class="btn-sm" id="searchBtn">
                                             <i data-feather="search" class="icon-14"></i>
                                             {{ localize('Search') }}
@@ -62,15 +66,19 @@
                                     <tr>
                                         <th class="text-center">{{ localize('S/L') }} </th>
                                         <th>{{ localize('Date') }}</th>
-                                        <th data-breakpoints="xs">{{ localize('Total Order') }}</th>
-                                        <th data-breakpoints="xs">{{ localize('Tax') }}</th>
-                                        <th data-breakpoints="xs">{{ localize('Payment Method') }}</th>
-                                        <th data-breakpoints="xs">{{ localize('Discount') }}</th>
-                                        <th data-breakpoints="xs">{{ localize('Total') }}</th>
+                                        <th>{{ localize('Invoice') }}</th>
+                                        <th>{{ localize('Product') }}</th>
+                                        <th>{{ localize('Qty') }}</th>
+                                        <th>{{ localize('Product Total') }}</th>
+                                        <th>{{ localize('Customer') }}</th>
+                                        <th>{{ localize('Payment Method') }}</th>
+                                        <th>{{ localize('Discount') }}</th>
+                                        <th>{{ localize('Order Total') }}</th>
+                                        <th>{{ localize('Paid') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <x-common.empty-row colspan=7 loading=true />
+                                    <x-common.empty-row colspan=11 loading=true />
                                 </tbody>
                             </table>
                         </div>
@@ -82,5 +90,5 @@
 @endsection
 
 @section('js')
-    @include('backend.admin.reports.js.items-js')
+    @include('backend.admin.reports.js.sales-js')
 @endsection

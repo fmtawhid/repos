@@ -331,7 +331,7 @@ class UserService
         return  User::where('user_type', appStatic()::TYPE_ADMIN_STAFF);
     }
 
-    public function getUsersForReport($query)
+    public function getUsersForReport($query, $export = false)
     {
          $date_range = request()->date_range ?? null;
 
@@ -352,6 +352,10 @@ class UserService
 
         if($status_id){
             $query->where('account_status', $status_id);
+        }
+
+        if ($export) {
+            return $query->get();
         }
 
         return $query->paginate(maxPaginateNo() ?? 10);

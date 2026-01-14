@@ -30,5 +30,15 @@
 
         getDataList();
     });
+
+    // Export handler
+    $('body').on('click', '#exportBtn', function() {
+        if (gFilterObj.hasOwnProperty('page')) {
+            delete gFilterObj.page;
+        }
+        var url = "{{ route('admin.reports.items_category.export') }}" + (gFilterObj ? '?' + $.param(gFilterObj) : '');
+        window.open(url, '_blank');
+    });
+
     getDataList();
 </script>
