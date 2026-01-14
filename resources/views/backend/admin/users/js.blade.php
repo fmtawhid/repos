@@ -3,7 +3,7 @@
 
     // load users
     function getDataList() {
-        var callParams      = {};
+        var callParams = {};
         callParams.type     = "GET";
         callParams.dataType = "html";
         callParams.url      = "{{ route('admin.users.index') }}" + (gFilterObj ? '?' + $.param(gFilterObj) : '');
@@ -11,7 +11,7 @@
         ajaxCall(callParams, function (result) {
             $('tbody').empty().html(result);
             feather.replace();
-        }, function onErrorData(err, type, httpStatus) {});
+        }, function(err, type, httpStatus){});
     }
 
     // handle offcanvas for adding an user
@@ -168,29 +168,54 @@
         });
     });
 
-    // delete user
+    // delete user (soft delete)
     $('body').on('click', '.deleteUser', function(){
-        let userId = parseInt($(this).data("id"));
-
+        let userId = $(this).data("id");
         swConfirm({
-            title: "Do you want to delete this user?",
+            title: "Do you want to move this user to trash?",
             confirmButtonText: "Yes",
             showDenyButton: true,
         }, (result) => {
-            if (result.isConfirmed) {
-                var callParams  = {};
-                callParams.type = "POST";
-                callParams.url  = $(this).data("url");
-                callParams.data = {
-                    id: userId,
-                    _method: $(this).data("method"),
-                    _token : "{{ csrf_token() }}"
-                };
-                ajaxCall(callParams, function (result) {
-                    toast(result.message);
+            if(result.isConfirmed){
+                $.post($(this).data('url'), {_method: "DELETE", _token: "{{ csrf_token() }}"}, function(res){
+                    toast(res.message);
                     getDataList();
-                }, function (err, type, httpStatus) {
-                    showFormError(err, '#addUserFrm');
+                });
+            }
+        });
+    });
+
+    // restore user
+    $('body').on('click', '.restoreUser', function(e){
+        e.preventDefault();
+        let url = $(this).data('url');
+        swConfirm({
+            title: "Do you want to restore this user?",
+            confirmButtonText: "Yes",
+            showDenyButton: true
+        }, (result) => {
+            if(result.isConfirmed){
+                $.post(url, {_token: "{{ csrf_token() }}"}, function(res){
+                    toast(res.message);
+                    getDataList();
+                });
+            }
+        });
+    });
+
+    // force delete user
+    $('body').on('click', '.forceDeleteUser', function(e){
+        e.preventDefault();
+        let url = $(this).data('url');
+        swConfirm({
+            title: "Do you want to permanently delete this user?",
+            confirmButtonText: "Yes",
+            showDenyButton: true
+        }, (result) => {
+            if(result.isConfirmed){
+                $.post(url, {_token: "{{ csrf_token() }}"}, function(res){
+                    toast(res.message);
+                    getDataList();
                 });
             }
         });

@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 class MenuItemsController extends Controller
 {
     use ApiResponseTrait;
+
     protected $appStatic;
     protected $service;
     protected $menuService;
@@ -29,22 +30,28 @@ class MenuItemsController extends Controller
         $this->itemCategoryService  = new ItemCategoryService();
     }
 
-    // show all menu list
+    // INDEX
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $data["menuItems"]       = $this->service->getAll(true);
+            // Fetch all menu items including soft-deleted ones
+            $data["menuItems"] = Product::with(['category', 'productAttributes'])
+                ->withTrashed()   // include soft-deleted products
+                ->latest()
+                ->paginate(10);
 
             return view('backend.admin.menuItems.list', $data)->render();
         }
 
-        $data["menus"]           = $this->menuService->getAll(true);
-        $data["itemCategories"]  = $this->itemCategoryService->getAll(true);
+        // Non-AJAX page load
+        $data["menus"] = $this->menuService->getAll(true);
+        $data["itemCategories"] = $this->itemCategoryService->getAll(true);
 
         return view("backend.admin.menuItems.index")->with($data);
     }
 
-    // add new menu
+
+    // STORE
     public function store(MenuItemStoreRequest $request)
     {
         try {
@@ -52,83 +59,60 @@ class MenuItemsController extends Controller
 
             $data = $request->getValidatedData();
 
-            // Menu Items Data Storing
             $menuItem = $this->service->store($data)->storeVariations($data);
 
             DB::commit();
 
             return $this->sendResponse(
                 $this->appStatic::SUCCESS_WITH_DATA,
-                localize("Menu Items Created Successfully"),
+                localize("Menu Item Created Successfully"),
                 $menuItem
             );
         } catch (\Throwable $e) {
-
             DB::rollBack();
-
             wLog("Failed to store Menu Items", errorArray($e));
-
             return $this->sendResponse(
                 $this->appStatic::VALIDATION_ERROR,
-                localize("Failed to create Menu Items"),
+                localize("Failed to create Menu Item"),
                 [],
                 errorArray($e)
             );
         }
     }
 
-    public function show(Request $request, $id)
-    {
-        if ($request->ajax()) {
-
-            $product = $this->service->findById($id);
-
-             // POS Product
-            $product = $product->load([
-                "attributes"
-            ]);
-
-            $data["product"] = $product;
-
-            $renderedHtml = view("posmanager::render.render-product-modal")->with($data)->render();
-
-            return $renderedHtml;
-        }
-    }
-
-
-    // edit the menu
+    // EDIT
     public function edit(Request $request, $id)
     {
         $data["menuItems"] = $this->service->findbyid($id, ['productAttributes', 'category']);
         return $this->sendResponse(
-            appStatic()::SUCCESS_WITH_DATA,
-            localize("Edit Menu Items"),
+            $this->appStatic::SUCCESS_WITH_DATA,
+            localize("Edit Menu Item"),
             $data
         );
     }
 
-    // update the menu
+    // UPDATE
     public function update(MenuItemUpdateRequest $request, Product $menuItem)
     {
         try {
             DB::beginTransaction();
+
             $data = $request->getValidatedData();
 
-
-             $menuItem = $this->service
+            $menuItem = $this->service
                 ->updateMenuItem($menuItem, $data)
                 ->updateOrCreateVariations($menuItem, $data);
 
             DB::commit();
+
             return $this->sendResponse(
                 $this->appStatic::SUCCESS_WITH_DATA,
-                localize("Menu Item updated successfully"),
+                localize("Menu Item Updated Successfully"),
                 $menuItem
             );
         } catch (\Throwable $e) {
             DB::rollBack();
-            wLog("Failed to store Menu Items", errorArray($e));
+            wLog("Failed to update Menu Items", errorArray($e));
             return $this->sendResponse(
                 $this->appStatic::VALIDATION_ERROR,
                 localize("Failed to Update Menu Item"),
@@ -138,29 +122,87 @@ class MenuItemsController extends Controller
         }
     }
 
-    // delete the menu
+    // SOFT DELETE
     public function destroy(Request $request, Product $menuItem)
     {
         if ($request->ajax()) {
             try {
-                $menuItem->productAttributes()->delete();
-                $menuItemDeleted = $menuItem->delete();
+                DB::beginTransaction();
+
+                // Soft delete product
+                $menuItem->delete();
+
+                // Only soft delete attributes NOT linked to orders
+                $menuItem->productAttributes()
+                    ->doesntHave('orderProducts')
+                    ->delete();
+
+                DB::commit();
+
                 return $this->sendResponse(
                     $this->appStatic::SUCCESS,
-                    localize("Menu Item successfully deleted"),
-                    $menuItemDeleted
+                    localize("Menu Item successfully deleted")
                 );
-            }
-            catch (\Throwable $e) {
+            } catch (\Throwable $e) {
+                DB::rollBack();
                 wLog("Failed to Delete Menu Items", errorArray($e));
                 return $this->sendResponse(
                     $this->appStatic::VALIDATION_ERROR,
-                    localize("Failed to Delete : ") . $e->getMessage(),
+                    localize("Failed to Delete Menu Item: ") . $e->getMessage(),
                     [],
                     errorArray($e)
                 );
             }
         }
     }
-}
 
+    // RESTORE
+    public function restore($id)
+    {
+        $menuItem = Product::onlyTrashed()->findOrFail($id);
+
+        $menuItem->restore();
+
+        // If ProductAttribute uses SoftDeletes, uncomment the next line
+        // $menuItem->productAttributes()->withTrashed()->restore();
+
+        return redirect()->back()->with('success', localize("Menu Item restored successfully"));
+    }
+
+    // FORCE DELETE
+    public function forceDelete($id)
+    {
+        $menuItem = Product::onlyTrashed()->findOrFail($id);
+
+        DB::beginTransaction();
+
+        try {
+            // 1️⃣ Remove order links for this product
+            \DB::table('order_products')->where('product_id', $menuItem->id)->delete();
+
+            // 2️⃣ Delete product attributes (if not linked to orders)
+            $menuItem->productAttributes()->doesntHave('orderProducts')->forceDelete();
+
+            // 3️⃣ Permanently delete product
+            $menuItem->forceDelete();
+
+            DB::commit();
+
+            return $this->sendResponse(
+                $this->appStatic::SUCCESS,
+                localize("Menu Item permanently deleted")
+            );
+
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return $this->sendResponse(
+                $this->appStatic::VALIDATION_ERROR,
+                localize("Failed to force delete Menu Item: ") . $e->getMessage(),
+                [],
+                errorArray($e)
+            );
+        }
+    }
+
+
+}

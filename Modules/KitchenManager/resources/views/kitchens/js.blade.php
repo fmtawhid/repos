@@ -162,6 +162,35 @@
             }
         });
     });
+    // Restore
+    $('body').on('click', '.restoreKitchen', function(){
+        ajaxCall({
+            type: "POST",
+            url: $(this).data("url"),
+            data: {_token: "{{ csrf_token() }}"}
+        }, function(res){
+            toast(res.message);
+            getDataList();
+        });
+    });
+
+    $('body').on('click', '.forceDeleteKitchen', function(){
+        let $el = $(this); // save the clicked element
+        let id = $el.data("id");
+        swConfirm({title:"Permanently delete this kitchen?"}, function(result){
+            if(result.isConfirmed){
+                ajaxCall({
+                    type: "POST",
+                    url: $el.data("url"), // use saved element
+                    data: {_token: "{{ csrf_token() }}"} 
+                }, function(res){
+                    toast(res.message);
+                    getDataList();
+                });
+            }
+        });
+    });
+
 
    var offcanvasBottom = document.getElementById('offcanvasBottom')
     var secondoffcanvas = document.getElementById('addKitchenSideBar')

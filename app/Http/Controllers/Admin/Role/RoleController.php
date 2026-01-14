@@ -23,17 +23,40 @@ class RoleController extends Controller
         $this->appStatic = appStatic();
     }
 
+    // public function index(Request $request, RoleService $roleService, UserService $userService)
+    // {
+    //     $data["customGroupAndPermissions"] = $roleService->adminCustomRoutes();
+
+    //     $data["roles"] = $roleService->getAll(true, null,["permissions"]);
+    //     if($request->ajax()){
+    //         return view("backend.admin.powerhouse.roles.role_lists")->with($data)->render();
+    //     }
+
+    //     return view("backend.admin.powerhouse.roles.index")->with($data);
+    // }
     public function index(Request $request, RoleService $roleService, UserService $userService)
-    {
-        $data["customGroupAndPermissions"] = $roleService->adminCustomRoutes();
+{
+    $data["customGroupAndPermissions"] = $roleService->adminCustomRoutes();
 
-        $data["roles"] = $roleService->getAll(true, null,["permissions"]);
-        if($request->ajax()){
-            return view("backend.admin.powerhouse.roles.role_lists")->with($data)->render();
-        }
+    // Fetch all roles including soft-deleted ones
+    $query = Role::with(['permissions'])
+                ->when(isVendor() || isVendorTeam(), function($q){
+                    $q->where('user_id', getUserParentId());
+                })
+                ->latest()
+                ->withTrashed(); // include soft-deleted
 
-        return view("backend.admin.powerhouse.roles.index")->with($data);
+    $roles = $query->paginate(request('perPage', maxPaginateNo()));
+
+    $data["roles"] = $roles;
+
+    if ($request->ajax()) {
+        return view("backend.admin.powerhouse.roles.role_lists")->with($data)->render();
     }
+
+    return view("backend.admin.powerhouse.roles.index")->with($data);
+}
+
 
     public function store(RoleStoreRequest $request, RoleService $roleService)
     {
@@ -144,5 +167,49 @@ class RoleController extends Controller
             }
         }
     }
+
+    public function restore($id)
+    {
+        $role = Role::onlyTrashed()->findOrFail($id);
+
+        // Ownership check
+        if ($role->user_id != getUserParentId()) {
+            return $this->sendResponse(
+                $this->appStatic::UNAUTHORIZED_ACTION,
+                localize("Sorry, you are not authorized to perform this action")
+            );
+        }
+
+        $role->restore();
+
+        return $this->sendResponse(
+            $this->appStatic::SUCCESS,
+            localize("Role restored successfully")
+        );
+    }
+
+    public function forceDelete($id)
+    {
+        $role = Role::onlyTrashed()->findOrFail($id);
+
+        // Ownership check
+        if ($role->user_id != getUserParentId()) {
+            return $this->sendResponse(
+                $this->appStatic::UNAUTHORIZED_ACTION,
+                localize("Sorry, you are not authorized to perform this action")
+            );
+        }
+
+        // Delete related permissions (optional)
+        $role->permissions()->detach();
+
+        $role->forceDelete();
+
+        return $this->sendResponse(
+            $this->appStatic::SUCCESS,
+            localize("Role permanently deleted")
+        );
+    }
+
 
 }

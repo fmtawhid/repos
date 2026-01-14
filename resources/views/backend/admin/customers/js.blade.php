@@ -158,33 +158,73 @@
     });
 
     // delete user
-    $('body').on('click', '.deleteCustomer', function(){
-        let userId = parseInt($(this).data("id"));
+$('body').on('click', '.deleteCustomer', function(e){
+    e.preventDefault();
+    let url = $(this).data('url');
 
-        let actionUrl = $(this).data('url');
-        swConfirm({
-            title: "Do you want to delete this user?",
-            confirmButtonText: "Yes",
-            showDenyButton: true,
-        }, (result) => {
-            if (result.isConfirmed) {
-                var callParams  = {};
-                callParams.type = "POST";
-                callParams.url  = actionUrl;
-                callParams.data = {
-                    id: userId,
-                    _method:"DELETE",
-                    _token : "{{ csrf_token() }}"
-                };
-                ajaxCall(callParams, function (result) {
-                    toast(result.message);
+    swConfirm({
+        title: "Do you want to delete this user?",
+        confirmButtonText: "Yes",
+        showDenyButton: true,
+    }, (result) => {
+        if(result.isConfirmed){
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    _method: "DELETE"
+                },
+                success: function(res){
+                    toast(res.message);
                     getDataList();
-                }, function (err, type, httpStatus) {
-                    showFormError(err, '#addCustomerFrm');
-                });
-            }
-        });
+                },
+                error: function(err){
+                    toast(err.responseJSON.message, 'error');
+                }
+            });
+        }
     });
+});
+
+    // restore customer
+$('body').on('click', '.restoreCustomer', function(e){
+    e.preventDefault();
+    let url = $(this).data('url');
+    $.post(url, {_token: "{{ csrf_token() }}"}, function(res){
+        toast(res.message);
+        getDataList(); // reload table
+    });
+});
+
+// force delete customer
+$('body').on('click', '.forceDeleteCustomer', function(e){
+    e.preventDefault();
+    let url = $(this).data('url');
+
+    swConfirm({
+        title: "Do you want to permanently delete this user?",
+        confirmButtonText: "Yes",
+        showDenyButton: true,
+    }, (result) => {
+        if(result.isConfirmed){
+            $.ajax({
+                url: url,
+                type: 'DELETE', // <-- POST থেকে DELETE করা হলো
+                data: {_token: "{{ csrf_token() }}"},
+                success: function(res){
+                    toast(res.message);
+                    getDataList(); // reload table
+                },
+                error: function(err){
+                    toast(err.responseJSON?.message || 'Something went wrong', 'error');
+                }
+            });
+        }
+    });
+});
+
+
     var offcanvasBottom = document.getElementById('offcanvasBottom')
     var secondoffcanvas = document.getElementById('addCustomerSideBar')
 

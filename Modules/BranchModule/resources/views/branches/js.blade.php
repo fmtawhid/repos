@@ -164,31 +164,60 @@
     });
 
     // delete Branch
-    $('body').on('click', '.deleteBranch', function(){
-        let BranchId = parseInt($(this).data("id"));
-        swConfirm({
-            title: "Do you want to delete this Branch ?",
-            confirmButtonText: "Yes",
-            showDenyButton: true,
-        }, (result) => {
-            if (result.isConfirmed) {
-                var callParams  = {};
-                callParams.type = "POST";
-                callParams.url  = $(this).data("url");
-                callParams.data = {
-                    id: BranchId,
-                    _method: $(this).data("method"),
-                    _token : "{{ csrf_token() }}"
-                };
-                ajaxCall(callParams, function (result) {
-                    toast(result.message);
-                    getDataList();
-                }, function (err, type, httpStatus) {
-                    showFormError(err, '#addBranchFrm');
-                });
-            }
-        });
+// Delete (soft)
+$('body').on('click', '.deleteBranch', function() {
+    let branchId = $(this).data("id");
+    swConfirm({
+        title: "Do you want to delete this Branch?",
+        confirmButtonText: "Yes",
+        showDenyButton: true,
+    }, (result) => {
+        if(result.isConfirmed){
+            ajaxCall({
+                type: "POST",
+                url: $(this).data("url"),
+                data: { id: branchId, _method: $(this).data("method"), _token: "{{ csrf_token() }}" }
+            }, function(result){
+                toast(result.message);
+                getDataList();
+            });
+        }
     });
+});
+
+// Restore
+$('body').on('click', '.restoreBranch', function(){
+    let branchId = $(this).data("id");
+    ajaxCall({
+        type: "POST",
+        url: $(this).data("url"),
+        data: { _token: "{{ csrf_token() }}" }
+    }, function(result){
+        toast(result.message);
+        getDataList();
+    });
+});
+
+// Force Delete
+$('body').on('click', '.forceDeleteBranch', function(){
+    let branchId = $(this).data("id");
+    swConfirm({
+        title: "Do you want to permanently delete this Branch?",
+        confirmButtonText: "Yes",
+        showDenyButton: true,
+    }, (result) => {
+        if(result.isConfirmed){
+            ajaxCall({
+                type: "DELETE",
+                url: $(this).data("url"),
+                data: { _token: "{{ csrf_token() }}" }
+            }, function(result){
+                toast(result.message);
+                getDataList();
+            });
+        }
+    });
+});
 
    var offcanvasBottom = document.getElementById('offcanvasBottom')
     var secondoffcanvas = document.getElementById('addBranchSideBar')

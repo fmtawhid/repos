@@ -157,32 +157,90 @@
     });
 
     // delete Table
-    $('body').on('click', '.deleteTable', function(){
-        let TableId = parseInt($(this).data("id"));
+    // $('body').on('click', '.deleteTable', function(){
+    //     let TableId = parseInt($(this).data("id"));
 
-        swConfirm({
-            title: "Do you want to delete this Table ?",
-            confirmButtonText: "Yes",
-            showDenyButton: true,
-        }, (result) => {
-            if (result.isConfirmed) {
-                var callParams  = {};
-                callParams.type = "POST";
-                callParams.url  = $(this).data("url");
-                callParams.data = {
-                    id: TableId,
-                    _method: $(this).data("method"),
-                    _token : "{{ csrf_token() }}"
-                };
-                ajaxCall(callParams, function (result) {
-                    toast(result.message);
-                    getDataList();
-                }, function (err, type, httpStatus) {
-                    showFormError(err, '#addTableFrm');
-                });
-            }
-        });
+    //     swConfirm({
+    //         title: "Do you want to delete this Table ?",
+    //         confirmButtonText: "Yes",
+    //         showDenyButton: true,
+    //     }, (result) => {
+    //         if (result.isConfirmed) {
+    //             var callParams  = {};
+    //             callParams.type = "POST";
+    //             callParams.url  = $(this).data("url");
+    //             callParams.data = {
+    //                 id: TableId,
+    //                 _method: $(this).data("method"),
+    //                 _token : "{{ csrf_token() }}"
+    //             };
+    //             ajaxCall(callParams, function (result) {
+    //                 toast(result.message);
+    //                 getDataList();
+    //             }, function (err, type, httpStatus) {
+    //                 showFormError(err, '#addTableFrm');
+    //             });
+    //         }
+    //     });
+    // });
+    // Delete table
+$('body').on('click', '.deleteTable', function(){
+    let tableId = $(this).data("id");
+    swConfirm({
+        title: "Do you want to delete this table?",
+        confirmButtonText: "Yes",
+        showDenyButton: true
+    }, (result) => {
+        if(result.isConfirmed){
+            ajaxCall({
+                type: "POST",
+                url: $(this).data("url"),
+                data: {
+                    _method: $(this).data("method") || 'DELETE',
+                    _token: "{{ csrf_token() }}"
+                }
+            }, function(res){
+                toast(res.message);
+                getDataList();
+            });
+        }
     });
+});
+
+// Restore table
+$('body').on('click', '.restoreTable', function(){
+    let tableId = $(this).data("id");
+    ajaxCall({
+        type: "POST",
+        url: $(this).data("url"),
+        data: {_token: "{{ csrf_token() }}"}
+    }, function(res){
+        toast(res.message);
+        getDataList();
+    });
+});
+
+// Force delete table
+$('body').on('click', '.forceDeleteTable', function(){
+    let tableId = $(this).data("id");
+    swConfirm({
+        title: "Do you want to permanently delete this table?",
+        confirmButtonText: "Yes",
+        showDenyButton: true
+    }, (result) => {
+        if(result.isConfirmed){
+            ajaxCall({
+                type: "POST",
+                url: $(this).data("url"),
+                data: {_token: "{{ csrf_token() }}"}
+            }, function(res){
+                toast(res.message);
+                getDataList();
+            });
+        }
+    });
+});
+
 
     var offcanvasBottom = document.getElementById('offcanvasBottom')
     var secondoffcanvas = document.getElementById('addTableSideBar')

@@ -17,6 +17,7 @@ use Modules\ReservationManager\App\Services\Reservation\ReservationService;
 
 class ReservationManagerController extends Controller
 {
+
     use ApiResponseTrait;
     protected $appStatic;
     protected $service;
@@ -50,20 +51,14 @@ class ReservationManagerController extends Controller
     // }
     public function index(Request $request)
     {
-        // ভেন্ডার কিনা চেক করুন
-        $isVendor = auth()->check() ;
-        
-        $data["reservations"] = $this->service
-            ->getAll(true, true, ['status', 'branch', 'customer', 'reservationTable', 'vendor'], $isVendor);
-
-        $data["branches"] = $this->branchService->getAll(null, true);
-
-        // অ্যাডমিনদের জন্য ভেন্ডার লিস্ট যোগ করুন
-        // if (auth()->user()->hasRole('admin')) {
-        //     $data["vendors"] = User::where('user_type', 'vendor')->pluck('first_name', 'id');
-        // }
+        $data['branches'] = $this->branchService->getAll(null, true);
 
         if ($request->ajax()) {
+            $data['reservations'] = Reservation::with(['branch', 'customer', 'reservationTable', 'status'])
+                ->withTrashed()
+                ->latest()
+                ->paginate(10);
+
             return view('reservationmanager::list', $data)->render();
         }
 
@@ -156,39 +151,43 @@ class ReservationManagerController extends Controller
     /**
      * Remove the specified resource from storage.
      */
+ // Soft delete
     public function destroy(Request $request, $id)
     {
-        $reservation = $this->service->findbyid($id);
+        $reservation = Reservation::findOrFail($id);
 
-        try {
-            if ($request->ajax()) {
-                // if($reservation->status_id !== 1 AND $reservation->is_paid !== 1){
-                if($reservation->status_id !== 1){
-                    return $this->sendResponse(
-                        $this->appStatic::SUCCESS,
-                        localize("Reservation successfully deleted"),
-                        $reservation->reservationTable()->delete(),
-                        $reservation->delete()
-                    );
-                }else{
-                    return $this->sendResponse(
-                        $this->appStatic::VALIDATION_ERROR,
-                        localize("Confirmed/completed reservation can't be deleted"),
-                        [],                
-                    );  
-                }
+        if ($request->ajax()) {
+            try {
+                $reservation->delete(); // soft delete
+                return $this->sendResponse($this->appStatic::SUCCESS, "Reservation Soft Deleted Successfully");
+            } catch (\Throwable $e) {
+                return $this->sendResponse($this->appStatic::VALIDATION_ERROR, "Failed to delete reservation", [], errorArray($e));
             }
-        }catch (\Throwable $e) {
-                wLog("Failed to Delete Reservation", errorArray($e));
-                return $this->sendResponse(
-                    $this->appStatic::VALIDATION_ERROR,
-                    localize("Failed to Delete : ") . $e->getMessage(),
-                    [],
-                    errorArray($e)
-                );
-            }
+        }
     }
-            
+
+    // Restore
+    public function restore($id)
+    {
+        $reservation = Reservation::onlyTrashed()->findOrFail($id);
+        $reservation->restore();
+
+        return $this->sendResponse($this->appStatic::SUCCESS, "Reservation Restored Successfully", $reservation);
+    }
+
+    // Force Delete
+    public function forceDelete($id)
+    {
+        $reservation = Reservation::onlyTrashed()->findOrFail($id);
+
+        // Delete related reservation tables first
+        $reservation->reservationTable()->delete(); // soft-delete first
+        // or ->forceDelete() if you want hard delete too
+        $reservation->forceDelete();
+
+        return $this->sendResponse($this->appStatic::SUCCESS, "Reservation Permanently Deleted");
+    }
+                
         
 
 

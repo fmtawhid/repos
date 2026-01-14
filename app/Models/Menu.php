@@ -49,5 +49,9 @@ class Menu extends Model
             $query->where('is_active', $is_active);
         }
     }
+    public function products()
+    {
+        return $this->hasMany(Product::class, 'menu_id', 'id');
+    }
 
 }

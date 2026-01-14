@@ -145,7 +145,7 @@
     $(document).on("click", ".erase", function(e) {
         e.preventDefault();
 
-        let url      = $(this).attr("data-href");
+        let url      = $(this).attr("data-url");
         let id       = $(this).attr('data-id');
         let method   = $(this).data('method') ?? "DELETE";
         // let callback = $(this).data('callback') ? window[callback] : "";
@@ -158,7 +158,7 @@
 
     // params: , ["Param 1", "Param 2"]
     function deleteData(_this, callback = "", params = []) {
-        let url    = _this.attr("data-href");
+        let url    = _this.attr("data-url");
         let id     = _this.attr('data-id');
         let method = _this.data('method') ?? "DELETE";
 

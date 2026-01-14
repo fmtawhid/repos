@@ -34,8 +34,10 @@ class TableController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-
-            $data["tables"] = $this->service->getAll(true);
+            $data["tables"] = Table::with(['area.branches'])
+                ->withTrashed()
+                ->latest()
+                ->paginate(10);
 
             return view('backend.admin.table.list', $data)->render();
         }
@@ -44,6 +46,7 @@ class TableController extends Controller
 
         return view("backend.admin.table.index")->with($data);
     }
+
 
 
     public function store(TableStoreRequest $request) {
@@ -136,4 +139,35 @@ class TableController extends Controller
             }
         }
     }
+
+    // Restore a table
+    public function restore($id)
+    {
+        $table = Table::onlyTrashed()->findOrFail($id);
+        $table->restore();
+
+        return $this->sendResponse(
+            $this->appStatic::SUCCESS,
+            localize("Table restored successfully"),
+            $table
+        );
+    }
+
+    // Force delete table
+    public function forceDelete($id)
+    {
+        $table = Table::onlyTrashed()->findOrFail($id);
+
+        // Delete QR code first
+        $table->qrCode()->delete();
+
+        // Permanently delete the table
+        $table->forceDelete();
+
+        return $this->sendResponse(
+            $this->appStatic::SUCCESS,
+            localize("Table permanently deleted")
+        );
+    }
+
 }

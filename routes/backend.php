@@ -80,8 +80,16 @@ Route::middleware(["auth"])->name("admin.")->prefix("admin")->group(function () 
     Route::prefix("user-role-management")->group(function () {
         Route::resource("permissions", PermissionController::class);
         Route::resource("roles", RoleController::class);
+        // Extra Routes for soft delete actions
+        Route::post('roles/{role}/restore', [RoleController::class, 'restore'])->name('roles.restore');
+        Route::post('roles/{role}/forceDelete', [RoleController::class, 'forceDelete'])->name('roles.forceDelete');
+        
         Route::post("active-status-update/{id}", [StatusUpdateController::class, "updateActiveStatus"])->name("roles.statusUpdate");
         Route::resource("users", UserController::class);
+        // Restore trashed user
+        Route::post("users/restore/{id}", [UserController::class, "restore"])->name("users.restore");
+        Route::post("users/force-delete/{id}", [UserController::class, "forceDelete"])->name("users.forceDelete");
+
         Route::post("users/active-status-update/{id}", [StatusUpdateController::class, "updateActiveStatus"])->name("users.statusUpdate");
     });
 
@@ -167,6 +175,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['auth', 'v
 
     // customer
     Route::resource('customers', CustomerController::class);
+    Route::post('customers/{id}/restore', [CustomerController::class, 'restore'])->name('customers.restore');
+    Route::delete('customers/{id}/force-delete', [CustomerController::class, 'forceDelete'])->name('customers.forceDelete');
+    
     Route::get('customers-export', [CustomerController::class, 'exports'])->name('customers.export');
 
 

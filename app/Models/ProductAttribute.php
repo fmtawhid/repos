@@ -42,6 +42,11 @@ class ProductAttribute extends Model
     {
         return formatPrice($this->price);
     }
+    public function orderProducts()
+    {
+        return $this->hasMany(OrderProduct::class, 'product_attribute_id');
+    }
+
 
 
 

@@ -221,32 +221,53 @@
     });
 
 
-    $('body').on('click', '.deleteReservations', function(){        
-        let menuId = parseInt($(this).data("id"));        
-        swConfirm({
-            title: "Do you want to delete this Reservation ?",
-            confirmButtonText: "Yes",
-            showDenyButton: true,
-        }, (result) => {
-            if (result.isConfirmed) {
-                var callParams  = {};
-                callParams.type = "POST";
-                callParams.url  = $(this).data("url");
-                callParams.data = {
-                    id: menuId,
-                    _method: $(this).data("method"),
-                    _token : "{{ csrf_token() }}"
-                };
-                ajaxCall(callParams, function (result) {
-                    toast(result.message);
-                    getDataList();
-                }, function (err, type, httpStatus) {
-                    toast(err.responseJSON.message, 'error');
-                    showFormError(err, '#addReservationsFrm');
-                });
-            }
-        });
+$('body').on('click', '.deleteReservations', function(){        
+    let $el = $(this);
+    let id = $el.data("id");
+    swConfirm({title: "Do you want to delete this Reservation?"}, function(result){
+        if(result.isConfirmed){
+            ajaxCall({
+                type: "POST",
+                url: $el.data("url"),
+                data: {_method: $el.data("method"), _token: "{{ csrf_token() }}"}
+            }, function(res){
+                toast(res.message);
+                getDataList();
+            });
+        }
     });
+});
+
+// Restore
+$('body').on('click', '.restoreReservation', function(){
+    let $el = $(this);
+    ajaxCall({
+        type: "POST",
+        url: $el.data("url"),
+        data: {_token: "{{ csrf_token() }}"}
+    }, function(res){
+        toast(res.message);
+        getDataList();
+    });
+});
+
+// Force Delete
+$('body').on('click', '.forceDeleteReservation', function(){
+    let $el = $(this);
+    swConfirm({title:"Permanently delete this reservation?"}, function(result){
+        if(result.isConfirmed){
+            ajaxCall({
+                type: "POST",
+                url: $el.data("url"),
+                data: {_token: "{{ csrf_token() }}"}
+            }, function(res){
+                toast(res.message);
+                getDataList();
+            });
+        }
+    });
+});
+
 
 
    var offcanvasBottom = document.getElementById('offcanvasBottom')

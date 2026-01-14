@@ -27,21 +27,35 @@ class MenuController extends Controller
         $this->branchesService = new BranchService();
     }
 
-    public function index(Request $request)
-    {
+    // public function index(Request $request)
+    // {
 
 
-        if ($request->ajax()) {
-            $data["menus"]      = $this->service->getAll(true, null, null, true, []);
+    //     if ($request->ajax()) {
+    //         $data["menus"]      = $this->service->getAll(true, null, null, true, []);
 
-            return view('backend.admin.menus.list', $data)->render();
-        }
+    //         return view('backend.admin.menus.list', $data)->render();
+    //     }
 
-        $data["branches"]   = $this->branchesService->getAll(null, true);
+    //     $data["branches"]   = $this->branchesService->getAll(null, true);
 
 
-        return view("backend.admin.menus.index")->with($data);
+    //     return view("backend.admin.menus.index")->with($data);
+    // }
+public function index(Request $request)
+{
+    if ($request->ajax()) {
+        $data["menus"] = Menu::with(['branches'])
+            ->withTrashed() // 🔥 deleted সহ
+            ->latest()
+            ->paginate(10);
+
+        return view('backend.admin.menus.list', $data)->render();
     }
+
+    $data["branches"] = $this->branchesService->getAll(null, true);
+    return view("backend.admin.menus.index")->with($data);
+}
 
 
     public function store(MenuStoreRequest $request) {
@@ -140,4 +154,33 @@ class MenuController extends Controller
             }
         }
     }
+    public function restore($id)
+    {
+        $menu = Menu::onlyTrashed()->findOrFail($id);
+        $menu->restore();
+
+        return redirect()->back()->with('success', localize("Menu restored successfully"));
+    }
+    public function forceDelete($id)
+{
+    $menu = Menu::onlyTrashed()->findOrFail($id);
+
+    // Detach products (unlink)
+    $menu->products()->update(['menu_id' => null]); // set menu_id to null for related products
+
+    // Detach branches
+    $menu->branches()->detach();
+
+    // Permanently delete menu
+    $menu->forceDelete();
+
+    return $this->sendResponse(
+        $this->appStatic::SUCCESS,
+        localize("Menu permanently deleted")
+    );
+}
+
+
+
+
 }

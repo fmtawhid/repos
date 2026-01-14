@@ -43,16 +43,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-auto">
-                                        <div class="input-group">
-                                            <x-form.select name="f_plan" id="f_plan" class="form-select-sm">
-                                                <option value="">{{ localize('Plan Type') }}</option>
-                                                @foreach ($plans as $id => $title)
-                                                    <option value="{{ $id }}">{{ $title }}</option>
-                                                @endforeach
-                                            </x-form.select>
-                                        </div>
-                                    </div>
+                                    
                                     <div class="col-auto">
                                         <div class="input-group">
                                             <x-form.select name="f_is_active" id="f_is_active" class="form-select-sm">

@@ -16,148 +16,109 @@ use Modules\KitchenManager\App\Services\KitchenService;
 class KitchenController extends Controller
 {
     use ApiResponseTrait;
+
     protected $appStatic;
     protected $service;
     protected $branchService;
 
     public function __construct()
     {
-        $this->appStatic     = new AppStatic();
-        $this->service       = new KitchenService();
+        $this->appStatic = new AppStatic();
+        $this->service = new KitchenService();
         $this->branchService = new BranchService();
     }
 
-    # get all kitchens
-    /**
-     * Display a listing of the resource.
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\Response
-     */
+    // List kitchens (with trashed)
     public function index(Request $request)
     {
-        $data["branches"] = $this->branchService->getAll(null, true);
+        $data['branches'] = $this->branchService->getAll(null, true);
 
-        // If the request is an AJAX request, return the kitchens list view
         if ($request->ajax()) {
-            $data["kitchens"] = $this->service->getAll(true);
+            $data['kitchens'] = Kitchen::with('branch')
+                ->withTrashed()
+                ->latest()
+                ->paginate(10);
 
             return view('kitchenmanager::kitchens.list', $data)->render();
         }
 
-        return view("kitchenmanager::kitchens.index")->with($data);
+        return view('kitchenmanager::kitchens.index')->with($data);
     }
 
-    /**
-     * store a new resource.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
+    // Store new kitchen
     public function store(KitchenStoreRequest $request)
     {
         try {
             DB::beginTransaction();
 
-            // is kitchen allowed to current subscription
-            if( userActivePlan()["allow_kitchen_panel"] == 0){
-                return $this->sendResponse(
-                    $this->appStatic::VALIDATION_ERROR,
-                    localize("You are not allowed to create a Kitchen"),
-                );
-            }
-
             $data = $request->getValidatedData();
-
-            // Kitchen Data Storing
             $kitchen = $this->service->store($data);
 
             DB::commit();
+            return $this->sendResponse($this->appStatic::SUCCESS_WITH_DATA, "Kitchen Created Successfully", $kitchen);
 
-            return $this->sendResponse(
-                $this->appStatic::SUCCESS_WITH_DATA,
-                localize("Kitchen Created Successfully"),
-                $kitchen
-            );
         } catch (\Throwable $e) {
-
             DB::rollBack();
-
             wLog("Failed to store Kitchen", errorArray($e));
-            return $this->sendResponse(
-                $this->appStatic::VALIDATION_ERROR,
-                localize("Failed to create Kitchen")." | ".$e->getMessage(),
-                [],
-                errorArray($e)
-            );
+            return $this->sendResponse($this->appStatic::VALIDATION_ERROR, "Failed to create Kitchen", [], errorArray($e));
         }
     }
 
-    // edit a resource
-    public function edit(Request $request, $id)
+    // Edit kitchen
+    public function edit($id)
     {
-
-        return $this->sendResponse(
-            appStatic()::SUCCESS_WITH_DATA,
-            localize("Edit Kitchen"),
-            $this->service->findbyid($id)
-        );
+        return $this->sendResponse($this->appStatic::SUCCESS_WITH_DATA, "Edit Kitchen", $this->service->findById($id));
     }
 
-
-    // update a resource
+    // Update kitchen
     public function update(KitchenUpdateRequest $request, Kitchen $kitchen)
     {
         try {
             DB::beginTransaction();
-
             $data = $request->getValidatedData();
             $kitchen->update($data);
-
             DB::commit();
 
-            return $this->sendResponse(
-                $this->appStatic::SUCCESS_WITH_DATA,
-                localize("Kitchen Updated Successfully"),
-                $kitchen
-            );
+            return $this->sendResponse($this->appStatic::SUCCESS_WITH_DATA, "Kitchen Updated Successfully", $kitchen);
+
         } catch (\Throwable $e) {
-
             DB::rollBack();
-
-            wLog("Failed to store Kitchen", errorArray($e));
-
-            return $this->sendResponse(
-                $this->appStatic::VALIDATION_ERROR,
-                localize("Failed to Update Kitchen"),
-                [],
-                errorArray($e)
-            );
+            wLog("Failed to update Kitchen", errorArray($e));
+            return $this->sendResponse($this->appStatic::VALIDATION_ERROR, "Failed to Update Kitchen", [], errorArray($e));
         }
     }
 
-    // delete a resource
+    // Soft delete
     public function destroy(Request $request, Kitchen $kitchen)
     {
         if ($request->ajax()) {
             try {
-
-                return $this->sendResponse(
-                    $this->appStatic::SUCCESS,
-                    localize("Kitchen successfully deleted"),
-                    $kitchen->delete()
-                );
-            }
-            catch (\Throwable $e) {
-
+                $kitchen->delete();
+                return $this->sendResponse($this->appStatic::SUCCESS, "Kitchen Soft Deleted Successfully");
+            } catch (\Throwable $e) {
                 wLog("Failed to Delete Kitchen", errorArray($e));
-
-                return $this->sendResponse(
-                    $this->appStatic::VALIDATION_ERROR,
-                    localize("Failed to Delete : ") . $e->getMessage(),
-                    [],
-                    errorArray($e)
-                );
+                return $this->sendResponse($this->appStatic::VALIDATION_ERROR, "Failed to Delete Kitchen", [], errorArray($e));
             }
         }
     }
+
+
+    // Restore
+    public function restore($id)
+    {
+        $kitchen = Kitchen::onlyTrashed()->findOrFail($id);
+        $kitchen->restore();
+
+        return $this->sendResponse($this->appStatic::SUCCESS, "Kitchen Restored Successfully", $kitchen);
+    }
+
+    // Force Delete
+    public function forceDelete($id)
+    {
+        $kitchen = Kitchen::onlyTrashed()->findOrFail($id);
+        $kitchen->forceDelete();
+
+        return $this->sendResponse($this->appStatic::SUCCESS, "Kitchen Permanently Deleted");
+    }
+
 }

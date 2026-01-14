@@ -144,6 +144,47 @@
         });
     });
 
+    // Restore Role
+    $('body').on('click', '.restoreRole', function(){
+        var url = $(this).data("url");
+
+        swConfirm({
+            title: "Do you want to restore this role?",
+            confirmButtonText: "Yes",
+            showDenyButton: true,
+        }, (result) => {
+            if(result.isConfirmed){
+                $.post(url, {_token: "{{ csrf_token() }}"}, function(res){
+                    toast(res.message);
+                    getDataList();
+                }).fail(function(err){
+                    showFormError(err, '#addFrm');
+                });
+            }
+        });
+    });
+
+    // Force Delete Role
+    $('body').on('click', '.forceDeleteRole', function(){
+        var url = $(this).data("url");
+
+        swConfirm({
+            title: "Do you want to permanently delete this role?",
+            confirmButtonText: "Yes",
+            showDenyButton: true,
+        }, (result) => {
+            if(result.isConfirmed){
+                $.post(url, {_token: "{{ csrf_token() }}"}, function(res){
+                    toast(res.message);
+                    getDataList();
+                }).fail(function(err){
+                    showFormError(err, '#addFrm');
+                });
+            }
+        });
+    });
+
+
     
     var offcanvasBottom = document.getElementById('offcanvasBottom')
     var secondoffcanvas = document.getElementById('addFormSidebar')

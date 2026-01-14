@@ -22,12 +22,27 @@ Route::middleware(["auth","vendor"])->prefix("vendor")->name("admin.")->group(fu
     // Menu crud
     Route::prefix("menus")->group(function () {
         Route::resource("menus", MenuController::class);
+        Route::post('menus/{id}/restore', [MenuController::class, 'restore'])
+            ->name('menus.restore');
+
+        Route::delete('menus/{id}/force-delete', [MenuController::class, 'forceDelete'])
+            ->name('menus.forceDelete');
+
+
         Route::post("active-status-update/{id}", [StatusUpdateController::class, "updateActiveStatus"])->name("menus.statusUpdate");
 
         Route::resource("item-categories", ItemCategoryController::class);
+        Route::post('item-categories/{id}/restore', [ItemCategoryController::class, 'restore'])
+            ->name('item-categories.restore');
+
+        Route::delete('item-categories/{id}/force-delete', [ItemCategoryController::class, 'forceDelete'])
+            ->name('item-categories.forceDelete');
         Route::post("item-categories/active-status-update/{id}", [StatusUpdateController::class, "updateActiveStatus"])->name("item-categories.statusUpdate");
 
         Route::resource("menu-items", MenuItemsController::class);
+        Route::post('menu-items/{id}/restore', [MenuItemsController::class, 'restore'])->name('menu-items.restore');
+        Route::delete('menu-items/{id}/force-delete', [MenuItemsController::class, 'forceDelete'])->name('menu-items.forceDelete');
+
         Route::post("menu-items/active-status-update/{id}", [StatusUpdateController::class, "updateActiveStatus"])->name("menu-items.statusUpdate");
 
         Route::post("delete/menu-item-variation/{id}", [MenuItemsController::class, 'deleteMenuItemVariation'])->name("delete.menuItemVariation");
@@ -39,12 +54,18 @@ Route::middleware(["auth","vendor"])->prefix("vendor")->name("admin.")->group(fu
     });
 
     // area crud
-    Route::resource("areas", AreaController::class);
+    Route::resource('areas', AreaController::class);
+    Route::post('areas/{id}/restore', [AreaController::class, 'restore'])->name('areas.restore');
+    Route::delete('areas/{id}/force-delete', [AreaController::class, 'forceDelete'])->name('areas.forceDelete');
+
     // Status Update
     Route::post("areas/active-status-update/{id}", [StatusUpdateController::class, "updateActiveStatus"])->name("areas.statusUpdate");
 
     //Table
     Route::resource("tables", TableController::class);
+    Route::post('tables/{id}/restore', [TableController::class, 'restore'])->name('tables.restore');
+    Route::post('tables/{id}/force-delete', [TableController::class, 'forceDelete'])->name('tables.forceDelete');
+    
     Route::post("active-status-update/{id}", [StatusUpdateController::class, "updateActiveStatus"])->name("tables.statusUpdate");
 
     Route::get('qr-codes', [QrCodeController::class, 'index'])->name('qr-codes.index');

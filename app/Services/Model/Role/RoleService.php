@@ -31,42 +31,44 @@ class RoleService
      * $onlyActive == false means return only active categories where is_active column value is 0.
      * */
     public function getAll(
-        $paginatePluckOrGet = null,
-        $onlyActive         = null,
-        $eagerLoad  = []
-    ) {
+    $paginatePluckOrGet = null,
+    $onlyActive         = null,
+    $eagerLoad  = [],
+    $withTrashed = false   // <<< NEW
+) {
 
-        $query = Role::query();
+    $query = Role::query();
 
-        // Eager Load
-        (!empty($eagerLoad) ? $eagerLoad = array_merge($eagerLoad, ["createdBy", "updatedBy"]) : true);
-
-        $query->with($eagerLoad)->latest();
-
-        // Bind Merchant ID or Super Admin ID
-
-        // Binding Merchant ID
-        if (isVendor() || isVendorTeam()) {
-            $query->userId(getUserParentId());
-        } else {
-            $user_id = isAdmin() ? userID() : getUserParentId();
-
-            $query->userId($user_id);
-        }
-
-        // Active in-active
-        if (!empty($onlyActive)) {
-            // Only active categories or not active categories
-            ($onlyActive ? $query->isActive() : $query->isActive(false));
-        }
-
-        // Pluck Data Returning
-        if (is_null($paginatePluckOrGet)) {
-            return $query->pluck("id", "title");
-        }
-
-        return $paginatePluckOrGet ? $query->paginate(maxPaginateNo()) : $query->get();
+    if ($withTrashed) {
+        $query->withTrashed(); // <<< include soft deleted roles
     }
+
+    // Eager Load
+    (!empty($eagerLoad) ? $eagerLoad = array_merge($eagerLoad, ["createdBy", "updatedBy"]) : true);
+
+    $query->with($eagerLoad)->latest();
+
+    // Bind Merchant ID or Super Admin ID
+    if (isVendor() || isVendorTeam()) {
+        $query->userId(getUserParentId());
+    } else {
+        $user_id = isAdmin() ? userID() : getUserParentId();
+        $query->userId($user_id);
+    }
+
+    // Active in-active
+    if (!empty($onlyActive)) {
+        ($onlyActive ? $query->isActive() : $query->isActive(false));
+    }
+
+    // Pluck Data Returning
+    if (is_null($paginatePluckOrGet)) {
+        return $query->pluck("id", "title");
+    }
+
+    return $paginatePluckOrGet ? $query->paginate(maxPaginateNo()) : $query->get();
+}
+
 
 
     /**

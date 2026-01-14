@@ -18,6 +18,11 @@ use Modules\ReservationManager\App\Http\Controllers\ReservationManagerController
 Route::group([], function () {
     Route::resource('reservationmanager', ReservationManagerController::class)->names('reservationmanager');
 
+Route::post('reservationmanager/{id}/restore', [ReservationManagerController::class, 'restore'])->name('reservationmanager.restore');
+Route::post('reservationmanager/{id}/force-delete', [ReservationManagerController::class, 'forceDelete'])->name('reservationmanager.forceDelete');
+
+
+
     Route::get('reservationmanager/table/branch/{branch_id}', [ReservationManagerController::class, 'getTableListByBranchId'])
         ->name('reservationmanager.table_list_by_branch_id');
 

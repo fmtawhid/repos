@@ -41,41 +41,68 @@ class UserService
      * $onlyActive == true means return only active categories where is_active column value is 1.
      * $onlyActive == false means return only active categories where is_active column value is 0.
      * */
-    public function getAll(
-        $paginatePluckOrGet = null,
-        $onlyActive         = null,
-        $userType           = null,
-        $bindParentUser     = true,
-        $withRelationship = []
-    ) {
-        $request    = request();
-        $onlyActive = $request->is_active ?? $onlyActive;
-        $userType   = $request->user_type ?? $userType;
+    public function getAll($paginatePluckOrGet = null, $onlyActive = null, $userType = null, $bindParentUser = true, $withRelationship = [], $includeTrashed = false)
+{
+    $query = User::query()->name(request()->search)
+        ->latest("id")
+        ->when(isAdmin() == false, function($q){
+            $q->where('created_by_id', userID());
+        });
 
-        $query = User::query()->name($request->search)
-            ->latest("id")->when(isAdmin() == false, function($q){
-                $q->where('created_by_id', userID());
-            });
-        (empty($withRelationship) ? $query : $query->with($withRelationship));
-
-         ($bindParentUser &&  isAdmin() == false ? $query->where("parent_user_id", getAdminOrCustomerId()) : false);
-
-        if(!is_null($onlyActive)){
-            $query->isActive($onlyActive);
-        }
-
-        if(!is_null($userType)){
-            $query->where('user_type', $userType);
-        }
-
-        // Pluck Data Returning
-        if (is_null($paginatePluckOrGet)) {
-            return $query->pluck("id", "first_name");
-        }
-
-
-        return $paginatePluckOrGet ? $query->paginate(maxPaginateNo()) : $query->get();
+    if ($includeTrashed) {
+        $query = $query->withTrashed();
     }
+
+    (empty($withRelationship) ? $query : $query->with($withRelationship));
+
+    ($bindParentUser && isAdmin() == false ? $query->where("parent_user_id", getAdminOrCustomerId()) : false);
+
+    if(!is_null($onlyActive)){
+        $query->isActive($onlyActive);
+    }
+
+    if(!is_null($userType)){
+        $query->where('user_type', $userType);
+    }
+
+    return $paginatePluckOrGet ? $query->paginate(maxPaginateNo()) : $query->get();
+}
+
+    // public function getAll(
+    //     $paginatePluckOrGet = null,
+    //     $onlyActive         = null,
+    //     $userType           = null,
+    //     $bindParentUser     = true,
+    //     $withRelationship = []
+    // ) {
+    //     $request    = request();
+    //     $onlyActive = $request->is_active ?? $onlyActive;
+    //     $userType   = $request->user_type ?? $userType;
+
+    //     $query = User::query()->name($request->search)
+    //         ->latest("id")->when(isAdmin() == false, function($q){
+    //             $q->where('created_by_id', userID());
+    //         });
+    //     (empty($withRelationship) ? $query : $query->with($withRelationship));
+
+    //      ($bindParentUser &&  isAdmin() == false ? $query->where("parent_user_id", getAdminOrCustomerId()) : false);
+
+    //     if(!is_null($onlyActive)){
+    //         $query->isActive($onlyActive);
+    //     }
+
+    //     if(!is_null($userType)){
+    //         $query->where('user_type', $userType);
+    //     }
+
+    //     // Pluck Data Returning
+    //     if (is_null($paginatePluckOrGet)) {
+    //         return $query->pluck("id", "first_name");
+    //     }
+
+
+    //     return $paginatePluckOrGet ? $query->paginate(maxPaginateNo()) : $query->get();
+    // }
 
     /**
      * User Store

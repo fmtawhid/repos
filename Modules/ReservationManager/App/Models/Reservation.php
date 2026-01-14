@@ -12,9 +12,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\BranchModule\App\Models\Branch;
 use Modules\ReservationManager\Database\factories\ReservationFactory;
-
+use Illuminate\Database\Eloquent\SoftDeletes;
 class Reservation extends Model
 {
+    use SoftDeletes;  // <-- add this
     use HasFactory;
     use CreatedByUpdatedByIdTrait;
     use VendorTrait;

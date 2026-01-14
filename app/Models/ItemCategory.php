@@ -51,4 +51,8 @@ class ItemCategory extends Model
         return $query;
 
     }
+    public function products()
+    {
+        return $this->hasMany(Product::class, 'item_category_id', 'id');
+    }
 }

@@ -71,6 +71,11 @@ class Product extends Model
     public function lowestVariationPrice(){
         return $this->productAttributes()->min('price');
     }
+    public function orderProducts()
+    {
+        return $this->hasMany(OrderProduct::class, 'product_attribute_id');
+    }
+
 
 
     public function scopeFilters($query)
