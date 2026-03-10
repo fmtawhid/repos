@@ -1,0 +1,30 @@
+Germany Server
+Visit: http://188.245.170.211:8090
+Panel username: admin
+Panel password: 9vQttCkH7czupkSj
+
+Bangladeshi Server
+Visit: https://103.129.203.19:8090
+Panel username: admin
+Panel password: 6M1N8yh3SzgZG5Nl
+
+Hosted Bro Server
+Hosting Package: Business
+Domain: copabusiness.com
+Login Details
+Control Panel URL: https://my.hostitbro.com/login
+Username: rafu@rafusoft.com
+Password: ddfI6}b@kj.q
+NameServer Information
+Nameserver 1: dns21.hostitbro.com
+Nameserver 2: dns22.hostitbro.com
+Server IP: 65.109.17.97,
+
+
+Namecheap login
+Rafusoft
+Rafu54189@#$
+
+cloudflare
+rafusoft@gmail.com
+Zb07I{dI/=4q
