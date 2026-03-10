@@ -9,20 +9,49 @@
     <meta charset="UTF-8">
     <title>{{ localize("Invoice") }}</title>
     <style>
+        /* ===== POS Printer Fixes ===== */
+        @media print {
+            @page {
+                size: 80mm auto; /* 58mm or 80mm width */
+                margin: 0;
+                height: auto;
+            }
+
+            body {
+                margin: 0;
+                padding: 0;
+                width: {{ $paperWidth }}mm;
+                font-family: monospace;
+                font-size: {{ $fontSize }}px;
+                height: auto;
+            }
+
+            div, span {
+                page-break-inside: avoid;
+            }
+
+            img {
+                max-width: 100%;
+            }
+        }
+
+        /* ===== General Styling ===== */
         body {
             font-family: monospace;
             font-size: {{ $fontSize }}px;
             width: {{ $paperWidth }}mm;
-            padding: 5px;
+            padding: 5px 0;
             margin: 0;
         }
 
+        img { max-width: 100px; height: auto; }
         .center { text-align: center; }
-        .line { border-top: 1px dashed #000; margin: 5px 0; }
+        .line { border-top: 1px dashed #000; margin: 3px 0; }
         .bold { font-weight: bold; }
         .item, .total { display: flex; justify-content: space-between; }
-        .footer { margin-top: 10px; font-size: 11px; }
+        .footer { margin-top: 5px; font-size: 11px; }
     </style>
+
 </head>
 
 <body>
